@@ -1,237 +1,261 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ai Là Triệu Phú KHTN 9 - Leaderboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
-        body { font-family: 'Roboto', sans-serif; background-color: #0f172a; color: white; overflow: hidden; }
-        .option-btn { transition: all 0.2s; border-width: 3px; }
-        .option-btn:hover:not(:disabled) { border-color: #fbbf24; transform: translateY(-2px); }
-        .correct { background-color: #16a34a !important; border-color: #4ade80 !important; animation: pulse 0.5s infinite; }
-        .wrong { background-color: #dc2626 !important; border-color: #f87171 !important; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-        .hidden { display: none; }
-    </style>
-</head>
-<body class="h-screen flex items-center justify-center p-2">
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from "firebase/app";
+import { 
+  getFirestore, collection, addDoc, onSnapshot, 
+  query, deleteDoc, doc, serverTimestamp, getDocs 
+} from "firebase/firestore";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { Trophy, User, Trash2, Play, Award, Zap } from 'lucide-react';
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP & LEADERBOARD -->
-    <div id="login-screen" class="w-full h-full flex flex-col md:flex-row items-center justify-center gap-8 max-w-6xl">
-        <div class="bg-slate-800 p-8 rounded-3xl border-4 border-yellow-500 shadow-2xl w-full max-w-md">
-            <h1 class="text-4xl font-black text-yellow-400 mb-2 uppercase text-center tracking-tighter">Ai Là Triệu Phú</h1>
-            <p class="text-center text-slate-400 italic mb-8">Ôn tập Khoa học tự nhiên 9</p>
-            <div class="space-y-4">
-                <input type="text" id="student-name" placeholder="Họ và tên" class="w-full p-4 rounded-xl bg-slate-700 border-2 border-slate-600 outline-none text-xl focus:border-yellow-500">
-                <input type="text" id="student-id" placeholder="Số báo danh" class="w-full p-4 rounded-xl bg-slate-700 border-2 border-slate-600 outline-none text-xl focus:border-yellow-500">
-                <button onclick="startGame()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-4 rounded-xl text-2xl transition-all active:scale-95 shadow-lg">
-                    <i class="fas fa-play-circle"></i> BẮT ĐẦU
-                </button>
+// --- CONFIG ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'khtn9-mil-pro-v2';
+const ADMIN_KEY = "admin123"; // MẬT MÃ CỦA MÀY Ở ĐÂY
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [gameState, setGameState] = useState('login'); // login, playing, result
+  const [studentInfo, setStudentInfo] = useState({ name: '', id: '' });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [scores, setScores] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [selectedIdx, setSelectedIdx] = useState(null);
+
+  // --- DATA MẪU ---
+  const questions = [
+    { q: "Chiết suất môi trường có giá trị bằng tỉ số tốc độ ánh sáng trong môi trường nào?", a: "Trong chân không / Trong môi trường đó", b: "Trong môi trường đó / Trong chân không", c: "Trong nước / Trong môi trường đó", d: "Trong không khí / Trong nước", ans: 0 },
+    { q: "Hiện tượng tia sáng bị lệch phương khi truyền xiên góc qua mặt phân cách gọi là gì?", a: "Khúc xạ ánh sáng", b: "Phản xạ ánh sáng", c: "Tán sắc ánh sáng", d: "Phản xạ toàn phần", ans: 0 },
+    { q: "Màu sắc của một vật mà ta nhìn thấy phụ thuộc vào ánh sáng bị vật đó:", a: "Hấp thụ và phản xạ", b: "Làm nóng lên", c: "Khúc xạ hoàn toàn", d: "Tán sắc qua vật", ans: 0 },
+    { q: "Bầu trời có màu xanh vào ban ngày chủ yếu do hiện tượng:", a: "Tán xạ ánh sáng bởi khí quyển", b: "Phản chiếu từ đại dương", c: "Tầng ozone có màu xanh", d: "Khúc xạ ánh sáng mặt trời", ans: 0 },
+    { q: "Thấu kính phân kì là loại thấu kính có:", a: "Phần rìa dày hơn phần giữa", b: "Phần giữa dày hơn phần rìa", c: "Hai mặt đều lồi", d: "Luôn cho ảnh thật", ans: 0 }
+  ];
+
+  // --- AUTH & FIREBASE ---
+  useEffect(() => {
+    const init = async () => {
+      if (typeof __initial_auth_token !== 'undefined') {
+        await signInAnonymously(auth);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    init();
+    return onAuthStateChanged(auth, setUser);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'scores'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => b.score - a.score);
+      setScores(data);
+    }, (err) => console.error(err));
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- ACTIONS ---
+  const handleStart = () => {
+    if (!studentInfo.name || !studentInfo.id) return alert("Nhập đủ thông tin đi mày!");
+    setGameState('playing');
+    setCurrentStep(0);
+  };
+
+  const handleAnswer = async (idx) => {
+    if (isCorrect !== null) return;
+    setSelectedIdx(idx);
+    const correct = idx === questions[currentStep].ans;
+    setIsCorrect(correct);
+
+    setTimeout(async () => {
+      if (correct && currentStep < questions.length - 1) {
+        setCurrentStep(prev => prev + 1);
+        setIsCorrect(null);
+        setSelectedIdx(null);
+      } else {
+        const finalScore = correct ? 10 : (currentStep * 2);
+        await saveScore(finalScore);
+        setGameState('result');
+      }
+    }, 1500);
+  };
+
+  const saveScore = async (score) => {
+    if (!user) return;
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'scores'), {
+      name: studentInfo.name,
+      studentId: studentInfo.id,
+      score: score,
+      timestamp: serverTimestamp()
+    });
+  };
+
+  const deleteOne = async (docId) => {
+    if (!isAdmin) return;
+    if (!window.confirm("Xóa đứa này khỏi bảng vàng nhé?")) return;
+    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'scores', docId));
+  };
+
+  const clearAll = async () => {
+    if (!isAdmin) return;
+    if (!window.confirm("XÓA HẾT LUÔN? Không hối hận đấy?")) return;
+    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'scores'));
+    const snap = await getDocs(q);
+    const delPromises = snap.docs.map(d => deleteDoc(d.ref));
+    await Promise.all(delPromises);
+    alert("Bay màu sạch bách!");
+  };
+
+  const checkAdmin = (val) => {
+    setStudentInfo({ ...studentInfo, id: val });
+    setIsAdmin(val === ADMIN_KEY);
+  };
+
+  // --- UI COMPONENTS ---
+  if (gameState === 'login') {
+    return (
+      <div className="min-h-screen w-full bg-[#020617] text-white flex flex-col md:flex-row items-center justify-center p-4 gap-8">
+        <div className="bg-slate-900 p-8 rounded-3xl border-4 border-blue-600 shadow-2xl w-full max-w-md">
+          <div className="text-center mb-8">
+            <Zap className="w-16 h-16 text-blue-400 mx-auto mb-2 animate-pulse" />
+            <h1 className="text-4xl font-black italic tracking-tighter">AI MILLIONAIRE</h1>
+            <p className="text-blue-500 text-xs font-bold tracking-widest uppercase mt-2">KHTN 9 - Edition</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-4 top-4 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Họ và tên" 
+                className="w-full pl-12 p-4 bg-slate-800 border-2 border-slate-700 rounded-xl focus:border-blue-500 outline-none"
+                value={studentInfo.name}
+                onChange={e => setStudentInfo({...studentInfo, name: e.target.value})}
+              />
             </div>
+            <div className="relative">
+              <Award className="absolute left-4 top-4 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Số báo danh" 
+                className={`w-full pl-12 p-4 bg-slate-800 border-2 rounded-xl focus:border-blue-500 outline-none transition-colors ${isAdmin ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'border-slate-700'}`}
+                value={studentInfo.id}
+                onChange={e => checkAdmin(e.target.value)}
+              />
+            </div>
+
+            {isAdmin && (
+              <div className="bg-red-950/30 border border-red-900/50 p-3 rounded-lg flex items-center justify-between animate-bounce">
+                <span className="text-red-400 text-xs font-bold">MODE: ADMIN TỐI CAO</span>
+                <button onClick={clearAll} className="text-red-500 hover:text-red-400"><Trash2 size={18}/></button>
+              </div>
+            )}
+
+            <button 
+              onClick={handleStart}
+              className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+            >
+              <Play fill="currentColor" /> BẮT ĐẦU NGAY
+            </button>
+          </div>
         </div>
 
-        <!-- BẢNG XẾP HẠNG REAL-TIME -->
-        <div class="bg-slate-800 p-6 rounded-3xl border-2 border-slate-700 w-full max-w-sm h-[500px] flex flex-col shadow-2xl">
-            <h3 class="text-2xl font-black text-yellow-500 mb-4 flex items-center gap-2 uppercase">
-                <i class="fas fa-trophy text-yellow-400"></i> Bảng Vàng Lớp 9
-            </h3>
-            <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-slate-600">
-                <p class="text-center text-slate-500 mt-20">Đang tải bảng điểm...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- MÀN HÌNH CHƠI GAME -->
-    <div id="game-screen" class="hidden w-full h-full flex flex-col gap-2 max-w-[1200px]" style="font-size: 20pt;">
-        <header class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border-b-4 border-yellow-500 shadow-lg">
-            <div class="flex gap-4 items-center">
-                <div class="bg-slate-700 px-4 py-2 rounded-xl border border-slate-600 flex items-center gap-3">
-                    <i class="fas fa-user-graduate text-yellow-400"></i>
-                    <span id="display-name" class="font-bold"></span>
+        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 w-full max-w-sm h-[500px] flex flex-col shadow-xl">
+          <h3 className="text-xl font-black text-blue-400 mb-4 flex items-center gap-2">
+            <Trophy className="text-yellow-500" /> BẢNG VÀNG CAO THỦ
+          </h3>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {scores.length > 0 ? scores.map((s, i) => (
+              <div key={s.id} className="group bg-slate-800/40 p-3 rounded-xl border border-slate-700 flex items-center justify-between hover:border-blue-500/50 transition-all">
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 text-center font-black ${i < 3 ? 'text-yellow-500' : 'text-slate-500'}`}>{i + 1}</span>
+                  <div>
+                    <div className="text-sm font-bold truncate w-24">{s.name}</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-tighter">SBD: {s.studentId}</div>
+                  </div>
                 </div>
-            </div>
-            <div class="flex gap-3">
-                <button id="help-50" onclick="use5050()" class="w-14 h-14 rounded-full border-2 border-yellow-500 flex items-center justify-center hover:bg-yellow-500 hover:text-slate-900 transition-colors"><i class="fas fa-half-circle"></i></button>
-                <button id="help-phone" onclick="usePhone()" class="w-14 h-14 rounded-full border-2 border-yellow-500 flex items-center justify-center hover:bg-yellow-500 hover:text-slate-900 transition-colors"><i class="fas fa-phone"></i></button>
-                <button id="help-audience" onclick="useAudience()" class="w-14 h-14 rounded-full border-2 border-yellow-500 flex items-center justify-center hover:bg-yellow-500 hover:text-slate-900 transition-colors"><i class="fas fa-users"></i></button>
-            </div>
-        </header>
-
-        <div class="flex flex-1 gap-2 overflow-hidden">
-            <div class="flex-1 flex flex-col gap-2">
-                <div class="bg-gradient-to-br from-blue-900 to-slate-950 p-10 rounded-3xl border-2 border-blue-400/30 flex-1 flex items-center justify-center text-center shadow-2xl relative">
-                    <div class="absolute top-4 left-6 text-sm text-yellow-500/50 font-black uppercase tracking-widest">Câu hỏi <span id="current-num">1</span></div>
-                    <h3 id="question-text" class="font-bold leading-tight px-4" style="font-size: 26pt;">...</h3>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-black text-blue-400">{s.score}đ</span>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => deleteOne(s.id)}
+                      className="p-2 bg-red-900/20 text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
-                <div class="grid grid-cols-2 gap-3" id="options-container"></div>
-            </div>
-            <aside id="ladder" class="w-28 bg-slate-800 rounded-2xl flex flex-col items-center py-2 gap-1 overflow-y-auto shrink-0 border-l border-slate-700 shadow-xl"></aside>
+              </div>
+            )) : <p className="text-center text-slate-600 py-20 italic">Chưa có dữ liệu</p>}
+          </div>
         </div>
-    </div>
+      </div>
+    );
+  }
 
-    <!-- MÀN HÌNH KẾT THÚC -->
-    <div id="result-screen" class="hidden bg-slate-800 p-12 rounded-3xl border-4 border-blue-500 shadow-2xl text-center max-w-lg w-full">
-        <i class="fas fa-crown text-8xl text-yellow-400 mb-6 animate-bounce"></i>
-        <h2 class="text-5xl font-black mb-4 uppercase" id="result-title">XUẤT SẮC</h2>
-        <div class="bg-slate-700 p-8 rounded-2xl mb-8 border-2 border-yellow-500">
-            <p class="text-slate-400 font-bold uppercase mb-2">Điểm của bạn</p>
-            <p class="text-8xl font-black text-yellow-400" id="final-score">0</p>
+  if (gameState === 'playing') {
+    const q = questions[currentStep];
+    return (
+      <div className="min-h-screen w-full bg-[#020617] text-white p-4 flex flex-col max-w-4xl mx-auto gap-4">
+        <div className="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">{studentInfo.name[0]}</div>
+            <div className="text-sm font-bold">{studentInfo.name}</div>
+          </div>
+          <div className="text-blue-500 font-black tracking-widest uppercase">Câu {currentStep + 1} / {questions.length}</div>
         </div>
-        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 px-10 py-4 rounded-xl text-2xl font-bold transition-all flex items-center gap-3 mx-auto">
-            <i class="fas fa-sync-alt"></i> CHƠI LẠI
+
+        <div className="flex-1 bg-slate-900 rounded-3xl border-2 border-blue-500/20 p-8 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-slate-800">
+            <div className="h-full bg-blue-500 transition-all duration-500" style={{width: `${((currentStep+1)/questions.length)*100}%`}}></div>
+          </div>
+          <h2 className="text-3xl font-bold leading-tight">{q.q}</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[q.a, q.b, q.c, q.d].map((opt, i) => {
+            let colorClass = "bg-slate-900 border-slate-800 hover:border-blue-500";
+            if (isCorrect !== null && i === q.ans) colorClass = "bg-green-600 border-green-400";
+            if (isCorrect === false && selectedIdx === i) colorClass = "bg-red-600 border-red-400";
+            
+            return (
+              <button 
+                key={i}
+                disabled={isCorrect !== null}
+                onClick={() => handleAnswer(i)}
+                className={`p-6 rounded-2xl border-4 text-left flex items-center gap-4 transition-all transform active:scale-95 ${colorClass}`}
+              >
+                <span className="text-blue-400 font-black text-xl">{['A','B','C','D'][i]}</span>
+                <span className="text-lg">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-[#020617] text-white flex items-center justify-center p-4">
+      <div className="bg-slate-900 p-12 rounded-3xl border-4 border-blue-600 text-center max-w-md w-full shadow-[0_0_50px_rgba(37,99,235,0.3)]">
+        <Award className="w-24 h-24 text-yellow-500 mx-auto mb-6 animate-bounce" />
+        <h2 className="text-4xl font-black mb-2 italic uppercase">Kết Thúc!</h2>
+        <div className="bg-slate-800 p-6 rounded-2xl mb-8 border border-slate-700">
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Điểm số của mày</p>
+          <div className="text-7xl font-black text-blue-500">{currentStep === questions.length ? 10 : currentStep*2}đ</div>
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="w-full bg-blue-600 py-4 rounded-xl font-bold text-xl hover:bg-blue-700 transition-colors"
+        >
+          QUAY LẠI MÀN HÌNH CHÍNH
         </button>
+      </div>
     </div>
-
-    <!-- FIREBASE SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        // --- CONFIG (Tao đã để sẵn biến môi trường) ---
-        const firebaseConfig = JSON.parse(window.atob('eyJhcmNoaXZlIjogImNvbmZpZyJ9') === '{"archive": "config"}' ? '__firebase_config' : '{}'); // Placeholder
-        // Thực tế khi chạy trong môi trường của mày, tao sẽ dùng config từ hệ thống
-        const actualConfig = JSON.parse('__firebase_config');
-        const app = initializeApp(actualConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = '__app_id';
-
-        let currentStep = 0;
-        let gameQuestions = [];
-        let isAnswered = false;
-        let studentData = { name: '', id: '' };
-
-        // --- CÂU HỎI KHTN 9 ---
-        const questionsSource = [
-            { lv: 1, q: "Chiết suất môi trường có giá trị bằng tỉ số tốc độ ánh sáng trong môi trường nào?", a: "Tốc độ trong chân không với tốc độ trong môi trường đó.", b: "Tốc độ trong môi trường đó với tốc độ trong chân không.", c: "Tốc độ trong nước với tốc độ trong môi trường.", d: "Tốc độ trong không khí với tốc độ trong nước.", ans: 0 },
-            { lv: 1, q: "Hiện tượng tia sáng bị lệch phương khi truyền xiên góc qua mặt phân cách gọi là gì?", a: "Khúc xạ ánh sáng.", b: "Phản xạ ánh sáng.", c: "Tán sắc ánh sáng.", d: "Hiện tượng phản xạ toàn phần.", ans: 0 },
-            { lv: 1, q: "Màu sắc của một vật mà ta nhìn thấy phụ thuộc vào ánh sáng bị vật đó:", a: "Hấp thụ và phản xạ.", b: "Làm nóng lên.", c: "Khúc xạ hoàn toàn.", d: "Tán sắc qua vật.", ans: 0 },
-            { lv: 2, q: "Tầng ozone có tác dụng gì quan trọng nhất với Trái Đất?", a: "Ngăn tia cực tím (UV) có hại.", b: "Làm giảm độ sáng Mặt Trời.", c: "Giúp cây xanh nhanh lớn.", d: "Ngăn chặn mưa axit.", ans: 0 },
-            { lv: 2, q: "Khi ánh sáng trắng đi qua lăng kính, chùm tia bị lệch về phía nào?", a: "Phía đáy lăng kính.", b: "Phía đỉnh lăng kính.", c: "Không bị lệch.", d: "Lệch về phía pháp tuyến.", ans: 0 },
-            { lv: 3, q: "Máy kéo thực hiện công 150.000J trong 30 giây. Công suất là:", a: "5.000 W", b: "4.500.000 W", c: "500 W", d: "0,5 W", ans: 0 },
-            { lv: 3, q: "Điều kiện xảy ra phản xạ toàn phần là n1 > n2 và:", a: "i ≥ i_gh", b: "i < i_gh", c: "i = 0", d: "i = 90 độ.", ans: 0 }
-            // (Đã rút gọn cho gọn file, mày có thể thêm các câu cũ vào đây)
-        ];
-
-        const scoreLadder = [1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9, 9, 9.5, 10];
-
-        // --- AUTH & LEADERBOARD ---
-        signInAnonymously(auth).then(() => {
-            const q = query(collection(db, "artifacts", appId, "public", "data", "scores"));
-            onSnapshot(q, (snapshot) => {
-                const scores = snapshot.docs.map(doc => doc.data())
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 10);
-                
-                const list = document.getElementById('leaderboard-list');
-                list.innerHTML = scores.map((s, i) => `
-                    <div class="flex justify-between items-center p-3 rounded-xl bg-slate-700/50 border border-slate-600">
-                        <div class="flex items-center gap-3">
-                            <span class="font-black text-yellow-500">#${i+1}</span>
-                            <div class="flex flex-col"><span class="font-bold text-sm">${s.name}</span><span class="text-[10px] text-slate-400">SBD: ${s.id}</span></div>
-                        </div>
-                        <span class="text-xl font-black text-yellow-400">${s.score}đ</span>
-                    </div>
-                `).join('') || '<p class="text-center text-slate-500 mt-20 italic">Chưa có bảng điểm</p>';
-            });
-        });
-
-        // --- GAME FUNCTIONS ---
-        window.startGame = () => {
-            const name = document.getElementById('student-name').value;
-            const id = document.getElementById('student-id').value;
-            if(!name || !id) return alert("Nhập tên và SBD đã mày ơi!");
-            studentData = { name, id };
-            
-            // Xáo trộn 15 câu (giả định list đủ 15 câu như yêu cầu ban đầu)
-            gameQuestions = questionsSource.sort(() => Math.random() - 0.5).slice(0, 15);
-            
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('display-name').innerText = name;
-            renderLadder();
-            showQuestion();
-        };
-
-        function renderLadder() {
-            const container = document.getElementById('ladder');
-            container.innerHTML = '';
-            for(let i = 14; i >= 0; i--) {
-                const active = currentStep === i ? 'bg-yellow-500 text-slate-900 font-black scale-110 rounded-lg shadow-lg' : 'text-slate-500';
-                container.innerHTML += `<div class="w-full text-center py-1 transition-all ${active}"><div class="text-[10pt]">Câu ${i+1}</div><div class="text-[12pt]">${scoreLadder[i]}đ</div></div>`;
-            }
-        }
-
-        function showQuestion() {
-            isAnswered = false;
-            const qData = gameQuestions[currentStep];
-            if(!qData) return endGame(true);
-            
-            document.getElementById('current-num').innerText = currentStep + 1;
-            document.getElementById('question-text').innerText = qData.q;
-            
-            const options = [
-                { t: qData.a, c: qData.ans === 0 },
-                { t: qData.b, c: qData.ans === 1 },
-                { t: qData.c, c: qData.ans === 2 },
-                { t: qData.d, c: qData.ans === 3 }
-            ].sort(() => Math.random() - 0.5);
-
-            const container = document.getElementById('options-container');
-            container.innerHTML = options.map((o, i) => `
-                <button onclick="checkAns(this, ${o.c})" class="option-btn bg-slate-800 p-6 rounded-2xl text-left flex items-center gap-4">
-                    <span class="text-yellow-500 font-black">${String.fromCharCode(65+i)}:</span>
-                    <span>${o.t}</span>
-                </button>
-            `).join('');
-            renderLadder();
-        }
-
-        window.checkAns = (btn, isCorrect) => {
-            if(isAnswered) return;
-            isAnswered = true;
-            if(isCorrect) {
-                btn.classList.add('correct');
-                setTimeout(() => {
-                    currentStep++;
-                    if(currentStep >= 15) endGame(true);
-                    else showQuestion();
-                }, 1200);
-            } else {
-                btn.classList.add('wrong');
-                setTimeout(() => endGame(false), 1200);
-            }
-        };
-
-        async function endGame(isWin) {
-            let finalScore = 0;
-            if(isWin) finalScore = 10;
-            else {
-                if(currentStep >= 10) finalScore = 9;
-                else if(currentStep >= 5) finalScore = 5;
-                else finalScore = 0;
-            }
-
-            // LƯU CLOUD
-            await addDoc(collection(db, "artifacts", appId, "public", "data", "scores"), {
-                ...studentData,
-                score: finalScore,
-                time: Date.now()
-            });
-
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('final-score').innerText = finalScore;
-            document.getElementById('result-title').innerText = isWin ? "THẮNG CUỘC" : "THUA RỒI";
-        }
-
-        window.use5050 = () => alert("Trợ giúp 50:50: Hệ thống đã loại 2 đáp án sai!");
-        window.usePhone = () => alert("Người thân: 'Tao chọn đáp án có chữ ánh sáng!'");
-        window.useAudience = () => alert("Khán giả: 70% chọn đáp án đúng.");
-    </script>
-</body>
-</html>
+  );
+}

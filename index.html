@@ -3,405 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ai Là Triệu Phú - KHTN 9 (Vật Lý)</title>
+    <title>Ai Là Triệu Phú - Vật Lý 9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
         
         body {
             font-family: 'Montserrat', sans-serif;
-            background: radial-gradient(circle, #020617, #0f172a, #1e1b4b);
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            background: #020617;
             color: white;
-        }
-
-        .game-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-        }
-
-        .header {
-            background: rgba(30, 41, 59, 0.8);
-            padding: 15px 25px;
-            border-radius: 15px;
-            border-bottom: 3px solid #3b82f6;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .main-content {
-            display: flex;
-            flex: 1;
-            gap: 15px;
             overflow: hidden;
+            height: 100vh;
         }
 
-        .left-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding-bottom: 30px;
-        }
-
-        .right-panel {
-            width: 160px;
-            background: rgba(15, 23, 42, 0.9);
-            border-radius: 15px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column-reverse;
-            justify-content: space-between;
-            border: 1px solid #334155;
-        }
-
-        .question-box {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            border: 3px solid #f8fafc;
-            padding: 25px;
-            border-radius: 60px;
-            text-align: center;
-            font-size: 1.5rem;
-            min-height: 120px;
+        /* Logic hiển thị đáp án */
+        .ans-btn {
+            background: linear-gradient(to right, #1e293b, #334155);
+            border: 2px solid #3b82f6;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }
-
-        .answers-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .answer-btn {
-            background: rgba(30, 41, 59, 0.7);
-            border: 2px solid #60a5fa;
-            padding: 18px;
-            border-radius: 40px;
-            font-size: 1.1rem;
-            text-align: left;
-            padding-left: 45px;
-            transition: all 0.2s;
+            padding: 1.25rem 2rem;
+            border-radius: 9999px;
             cursor: pointer;
-            position: relative;
+            width: 100%;
+            text-align: left;
         }
 
-        .answer-btn:hover:not(.used):not(.disabled) {
+        .ans-btn:hover:not(.locked) {
             background: #f59e0b;
-            color: #000;
-            border-color: #fff;
+            color: black;
+            border-color: white;
         }
 
-        .answer-btn.selected { background: #f97316 !important; color: white; }
-        .answer-btn.correct { background: #22c55e !important; color: white; border-color: #fff; }
-        .answer-btn.wrong { background: #ef4444 !important; color: white; border-color: #fff; }
-        .answer-btn.disabled { opacity: 0; pointer-events: none; }
+        .ans-btn.selected { background: #ea580c !important; color: white; }
+        .ans-btn.correct { background: #16a34a !important; color: white; border-color: white; }
+        .ans-btn.wrong { background: #dc2626 !important; color: white; border-color: white; }
 
-        .money-item {
-            padding: 3px;
-            font-size: 10pt;
-            text-align: center;
-            border-radius: 6px;
+        .ans-hidden {
+            display: none !important;
+            pointer-events: none !important;
         }
-        .money-item.active { background: #f59e0b; color: black; font-weight: bold; }
-        .milestone { color: #fde047; font-weight: bold; }
 
-        .helper-btn {
-            width: 55px; height: 55px; border-radius: 50%;
-            background: #2563eb; border: 2px solid white;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-weight: bold; transition: 0.3s;
-            font-size: 0.9rem;
-        }
-        .helper-btn.used { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+        .money-item { font-size: 0.85rem; padding: 2px; }
+        .money-item.active { background: #f59e0b; color: black; font-weight: bold; border-radius: 4px; }
+        .money-item.milestone { color: #fde047; }
 
-        #login-screen, #result-screen {
-            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
-        }
-        
-        #msg-overlay {
+        #msg-box {
             position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
-            background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px;
-            z-index: 3000; border: 3px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: none; animation: slideDown 0.4s ease-out; text-align: center;
-            max-width: 80%;
-        }
-
-        @keyframes slideDown {
-            from { transform: translate(-50%, -100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
+            background: #1d4ed8; border: 3px solid white; border-radius: 20px;
+            padding: 20px; z-index: 5000; display: none; text-align: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); min-width: 300px;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-950">
 
-    <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
-    <audio id="snd-correct" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
-    <audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3"></audio>
+    <audio id="s-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="s-correct" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+    <audio id="s-wrong" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3"></audio>
 
-    <div id="login-screen">
-        <h1 class="text-6xl font-bold text-yellow-400 mb-2">VẬT LÝ 9</h1>
-        <p class="text-xl text-blue-300 mb-8 italic">Chương trình GDPT 2018 (Chuẩn 50 câu)</p>
-        <div class="flex flex-col gap-4">
-            <input type="text" id="u-name" class="p-4 rounded-xl text-black w-80 text-lg" placeholder="Nhập tên của bạn...">
-            <input type="text" id="u-sbd" class="p-4 rounded-xl text-black w-80 text-lg" placeholder="Số báo danh">
-            <button class="bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold text-xl transition" onclick="start()">VÀO STUDIO</button>
+    <div id="msg-box" onclick="this.style.display='none'">
+        <p id="msg-content" class="text-xl font-bold"></p>
+        <p class="text-sm mt-2 opacity-70">Bấm để đóng</p>
+    </div>
+
+    <!-- Màn hình chào - Đã thêm ô SBD -->
+    <div id="intro" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-5xl font-black text-yellow-500 mb-2">VẬT LÝ 9</h1>
+        <p class="text-blue-400 mb-10 tracking-widest uppercase">Ai là triệu phú - Bản chuẩn GDPT</p>
+        <div class="w-full max-w-md space-y-4">
+            <input type="text" id="name-in" placeholder="Họ và tên thí sinh" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500">
+            <input type="text" id="sbd-in" placeholder="Số báo danh (SBD)" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500">
+            <button onclick="initGame()" class="w-full p-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xl transition-all active:scale-95 shadow-lg">VÀO PHÒNG THI</button>
         </div>
     </div>
 
-    <div id="msg-overlay" onclick="this.style.display='none'">
-        <p id="msg-text" class="text-xl font-bold"></p>
-        <p class="text-sm mt-2 opacity-80">(Bấm vào đây để đóng)</p>
-    </div>
-
-    <div class="game-container">
-        <div class="header">
-            <div class="text-xl">
-                <span id="d-name" class="text-yellow-400 font-bold">Thí sinh: ---</span> | 
-                <span id="d-sbd">SBD: ---</span>
+    <!-- Game Chính -->
+    <div class="h-screen flex flex-col p-4 max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-6 bg-slate-900/80 p-4 rounded-2xl border-b-2 border-blue-500 shadow-lg">
+            <div class="text-lg">
+                <span id="p-name" class="text-yellow-400 font-bold">Thí sinh</span> 
+                <span class="mx-2 text-slate-500">|</span> 
+                <span id="p-sbd" class="text-blue-400 italic">SBD: ---</span>
             </div>
             <div class="flex gap-4">
-                <button id="h-5050" class="helper-btn" title="50:50" onclick="f5050()">50:50</button>
-                <button id="h-call" class="helper-btn" title="Gọi người thân" onclick="fCall()">📞</button>
-                <button id="h-aud" class="helper-btn" title="Hỏi khán giả" onclick="fAud()">👥</button>
+                <button id="help-50" onclick="use5050()" class="w-14 h-14 rounded-full bg-blue-700 border-2 border-white font-bold hover:bg-blue-600 disabled:opacity-30 disabled:grayscale transition-all shadow-md">50:50</button>
+                <button id="help-call" onclick="useCall()" class="w-14 h-14 rounded-full bg-blue-700 border-2 border-white font-bold hover:bg-blue-600 disabled:opacity-30 disabled:grayscale transition-all shadow-md">📞</button>
+                <button id="help-aud" onclick="useAud()" class="w-14 h-14 rounded-full bg-blue-700 border-2 border-white font-bold hover:bg-blue-600 disabled:opacity-30 disabled:grayscale transition-all shadow-md">👥</button>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="left-panel">
-                <div id="q-text" class="question-box">Đang tải câu hỏi...</div>
-                <div class="answers-grid" id="ans-grid">
-                    <button id="btn-0" class="answer-btn" onclick="ans(0)">A: </button>
-                    <button id="btn-1" class="answer-btn" onclick="ans(1)">B: </button>
-                    <button id="btn-2" class="answer-btn" onclick="ans(2)">C: </button>
-                    <button id="btn-3" class="answer-btn" onclick="ans(3)">D: </button>
+        <div class="flex flex-1 gap-6 overflow-hidden">
+            <div class="flex-[3] flex flex-col justify-end pb-10">
+                <div id="q-area" class="bg-gradient-to-br from-blue-900 to-blue-700 p-8 rounded-[40px] border-4 border-slate-200 text-center text-2xl font-bold mb-8 shadow-2xl">
+                    Đang chuẩn bị câu hỏi...
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="ans-container">
+                    <button id="ans-0" onclick="checkAns(0)" class="ans-btn"><span class="text-yellow-400 font-bold mr-3">A:</span> <span class="txt">...</span></button>
+                    <button id="ans-1" onclick="checkAns(1)" class="ans-btn"><span class="text-yellow-400 font-bold mr-3">B:</span> <span class="txt">...</span></button>
+                    <button id="ans-2" onclick="checkAns(2)" class="ans-btn"><span class="text-yellow-400 font-bold mr-3">C:</span> <span class="txt">...</span></button>
+                    <button id="ans-3" onclick="checkAns(3)" class="ans-btn"><span class="text-yellow-400 font-bold mr-3">D:</span> <span class="txt">...</span></button>
                 </div>
             </div>
-            <div class="right-panel" id="sidebar"></div>
+
+            <div id="score-board" class="flex-1 bg-slate-900/90 rounded-2xl p-4 flex flex-col-reverse border border-slate-800 shadow-inner">
+                <!-- Score rendered by JS -->
+            </div>
         </div>
     </div>
 
     <script>
-        const db = [
-            // BIẾT
-            { q: "Chiết suất của một môi trường có giá trị bằng:", a: ["Tỉ số tốc độ ánh sáng trong chân không với tốc độ ánh sáng trong môi trường đó", "Tích tốc độ ánh sáng trong chân không và môi trường đó", "Hiệu tốc độ ánh sáng trong chân không và môi trường đó", "Tỉ số tốc độ ánh sáng trong môi trường đó với chân không"], c: 0, lv: 1 },
-            { q: "Phát biểu nào sau đây đúng về định luật khúc xạ ánh sáng?", a: ["Tia khúc xạ nằm trong mặt phẳng tới", "Góc khúc xạ luôn bằng góc tới", "Tia tới và tia khúc xạ nằm cùng phía so với pháp tuyến", "Tia khúc xạ luôn vuông góc với tia tới"], c: 0, lv: 1 },
-            { q: "Ánh sáng màu là gì?", a: ["Ánh sáng không bị tán sắc khi đi qua lăng kính", "Ánh sáng trắng bị nhuộm màu", "Ánh sáng có màu sắc biến đổi liên tục", "Ánh sáng phát ra từ gương"], c: 0, lv: 1 },
-            { q: "Màu sắc của một vật được nhìn thấy phụ thuộc vào:", a: ["Màu sắc ánh sáng bị vật hấp thụ và phản xạ", "Khối lượng của vật", "Nhiệt độ môi trường", "Hình dạng của vật"], c: 0, lv: 1 },
-            { q: "Tầng ozone có tác dụng gì đối với Trái Đất?", a: ["Ngăn chặn phần lớn tia tử ngoại từ Mặt Trời", "Làm cho bầu trời có màu xanh", "Cung cấp oxygen cho con người", "Ngăn chặn hiện tượng sao băng"], c: 0, lv: 1 },
-            { q: "Chiết suất của chân không có giá trị bằng:", a: ["1", "0", "1.33", "1.5"], c: 0, lv: 1 },
-            { q: "Công thức n = sin i / sin r được dùng để tính:", a: ["Chiết suất của môi trường khúc xạ", "Góc tới hạn", "Tốc độ ánh sáng", "Công suất của nguồn sáng"], c: 0, lv: 1 },
-            { q: "Vật màu đen là vật:", a: ["Hấp thụ hầu hết các ánh sáng màu chiếu đến nó", "Phản xạ tất cả ánh sáng màu", "Tự phát ra ánh sáng màu đen", "Chỉ phản xạ ánh sáng trắng"], c: 0, lv: 1 },
-            { q: "Đại lượng đặc trưng cho tốc độ thực hiện công là:", a: ["Công suất", "Công cơ học", "Năng lượng", "Lực kéo"], c: 0, lv: 1 },
-            { q: "Phản xạ toàn phần xảy ra khi góc tới i thỏa mãn điều kiện:", a: ["i lớn hơn hoặc bằng góc tới hạn", "i nhỏ hơn góc tới hạn", "i luôn bằng 45 độ", "i bằng góc khúc xạ"], c: 0, lv: 1 },
-            
-            // HIỂU
-            { q: "Trong sơ đồ đường truyền qua lăng kính, tia ló luôn lệch về phía nào?", a: ["Đáy của lăng kính", "Đỉnh của lăng kính", "Pháp tuyến", "Không lệch"], c: 0, lv: 2 },
-            { q: "Tại sao khi chiếu ánh sáng trắng qua lăng kính lại thấy dải màu cầu vồng?", a: ["Vì lăng kính chiết suất khác nhau với các ánh sáng màu khác nhau", "Vì lăng kính tự nhuộm màu ánh sáng", "Vì ánh sáng trắng bị lăng kính phản xạ", "Vì lăng kính có 3 cạnh"], c: 0, lv: 2 },
-            { q: "Nếu nhìn một tờ giấy đỏ dưới ánh sáng màu xanh lá cây, ta sẽ thấy nó màu gì?", a: ["Gần như màu đen", "Màu đỏ", "Màu xanh lá", "Màu trắng"], c: 0, lv: 2 },
-            { q: "Tại sao tầng ozone bị thủng lại nguy hiểm cho con người?", a: ["Vì tia tử ngoại sẽ gây ung thư da và hỏng mắt", "Vì không khí sẽ thoát ra ngoài vũ trụ", "Vì Trái Đất sẽ bị lạnh đi", "Vì ánh sáng sẽ không còn màu sắc"], c: 0, lv: 2 },
-            { q: "Điều kiện cần để xảy ra phản xạ toàn phần là truyền ánh sáng từ:", a: ["Môi trường chiết quang hơn sang kém hơn", "Môi trường chiết quang kém sang hơn", "Chân không vào nước", "Không khí vào thủy tinh"], c: 0, lv: 2 },
-            { q: "Công thức P = A/t cho thấy công suất tỉ lệ nghịch với:", a: ["Thời gian thực hiện công", "Công thực hiện được", "Lực tác dụng", "Quãng đường đi được"], c: 0, lv: 2 },
-            { q: "Chiết suất n = 1,5 của thủy tinh có nghĩa là:", a: ["Tốc độ ánh sáng trong chân không gấp 1,5 lần trong thủy tinh", "Tốc độ ánh sáng trong thủy tinh là 1,5 m/s", "Góc tới luôn gấp 1,5 lần góc khúc xạ", "Thủy tinh nặng gấp 1,5 lần nước"], c: 0, lv: 2 },
-            { q: "Quang phổ của ánh sáng trắng qua lăng kính chứng tỏ điều gì?", a: ["Ánh sáng trắng là tập hợp của vô số ánh sáng đơn sắc", "Lăng kính làm đổi màu ánh sáng", "Ánh sáng trắng chỉ có 7 màu", "Ánh sáng trắng không thể bị khúc xạ"], c: 0, lv: 2 },
-            { q: "Khi tia sáng truyền vuông góc với mặt phân cách giữa hai môi trường thì:", a: ["Góc tới bằng 0 và không bị lệch phương", "Góc tới bằng 90 độ", "Góc khúc xạ bằng 45 độ", "Ánh sáng bị phản xạ toàn phần"], c: 0, lv: 2 },
-            { q: "Sự tán sắc ánh sáng Mặt Trời trong các giọt nước mưa tạo ra hiện tượng:", a: ["Cầu vồng", "Nhật thực", "Thủy triều", "Sấm sét"], c: 0, lv: 2 },
-
-            // VẬN DỤNG
-            { q: "Một máy kéo thực hiện công 45.000 J trong 15 giây. Công suất của máy là:", a: ["3.000 W", "675.000 W", "300 W", "45.000 W"], c: 0, lv: 3 },
-            { q: "Chiếu tia sáng từ không khí vào nước với i=45 độ, r=32 độ. Chiết suất của nước là khoảng:", a: ["1,33", "1,5", "1,41", "1,0"], c: 0, lv: 3 },
-            { q: "Tốc độ ánh sáng trong chân không là 3.10^8 m/s. Trong nước (n=1,33), tốc độ này là:", a: ["~2,25.10^8 m/s", "4.10^8 m/s", "3.10^8 m/s", "1,33.10^8 m/s"], c: 0, lv: 3 },
-            { q: "Góc tới hạn khi ánh sáng truyền từ thủy tinh (n=1,5) ra không khí là khoảng:", a: ["41,8 độ", "30 độ", "48,6 độ", "60 độ"], c: 0, lv: 3 },
-            { q: "Một động cơ công suất 500W hoạt động trong 10 phút thì thực hiện công bằng:", a: ["300.000 J", "5.000 J", "50 J", "3.000 J"], c: 0, lv: 3 },
-            { q: "Khi chiếu ánh sáng trắng qua một kính lọc màu đỏ, ta thu được ánh sáng:", a: ["Màu đỏ", "Màu trắng", "Màu đen", "Đầy đủ 7 màu"], c: 0, lv: 3 },
-            { q: "Một người nâng vật nặng lên cao thực hiện công 600J trong 4 giây. Công suất người đó là:", a: ["150 W", "2400 W", "150 J", "600 W"], c: 0, lv: 3 },
-            { q: "Trong thí nghiệm lăng kính, để thu được quang phổ rõ nét cần có:", a: ["Khe hẹp để tạo chùm sáng song song tới lăng kính", "Nguồn sáng đơn sắc", "Gương cầu lõm", "Thấu kính phân kỳ"], c: 0, lv: 3 },
-            { q: "Nếu chiết suất của kim cương là 2,42, góc tới hạn của nó với không khí là:", a: ["~24,4 độ", "42,2 độ", "15,5 độ", "90 độ"], c: 0, lv: 3 },
-            { q: "Để quan sát được hiện tượng khúc xạ rõ nhất, ta nên chiếu tia sáng:", a: ["Xiên góc với mặt phân cách", "Vuông góc mặt phân cách", "Song song mặt phân cách", "Từ tối ra sáng"], c: 0, lv: 3 }
+        const QUESTIONS = [
+            { q: "Chiết suất của một môi trường có giá trị bằng:", a: ["Tỉ số v ánh sáng chân không / v trong môi trường", "Tích v ánh sáng chân không và môi trường", "Hiệu v ánh sáng chân không và môi trường", "Tỉ số v ánh sáng môi trường / chân không"], c: 0, lv: 1 },
+            { q: "Tia khúc xạ nằm ở đâu so với mặt phẳng tới?", a: ["Nằm trong mặt phẳng tới", "Nằm ngoài mặt phẳng tới", "Luôn vuông góc", "Luôn song song"], c: 0, lv: 1 },
+            { q: "Ánh sáng trắng qua lăng kính bị phân tích thành dải màu gọi là gì?", a: ["Sự tán sắc ánh sáng", "Sự phản xạ ánh sáng", "Sự hội tụ ánh sáng", "Sự khúc xạ đơn thuần"], c: 0, lv: 1 },
+            { q: "Vật màu xanh lá cây khi nhìn dưới ánh sáng trắng sẽ có màu gì?", a: ["Màu xanh lá cây", "Màu đỏ", "Màu đen", "Màu trắng"], c: 0, lv: 1 },
+            { q: "Tầng Ozone bảo vệ chúng ta khỏi loại tia nào?", a: ["Tia tử ngoại (UV)", "Tia hồng ngoại", "Tia X", "Tia Gamma"], c: 0, lv: 1 },
+            { q: "Đơn vị của công suất là gì?", a: ["Oát (W)", "Jun (J)", "Niuton (N)", "Mét (m)"], c: 0, lv: 1 },
+            { q: "Khi ánh sáng truyền từ nước ra không khí, góc khúc xạ r so với góc tới i như thế nào?", a: ["r > i", "r < i", "r = i", "Không xác định"], c: 0, lv: 2 },
+            { q: "Hiện tượng phản xạ toàn phần xảy ra khi nào?", a: ["i ≥ i tới hạn", "i < i tới hạn", "i luôn bằng 0", "i bằng 90 độ"], c: 0, lv: 2 },
+            { q: "Công thức tính công suất P là:", a: ["P = A / t", "P = A * t", "P = F * s", "P = m * g"], c: 0, lv: 2 },
+            { q: "Tại sao ta thấy bầu trời có màu xanh?", a: ["Do sự tán xạ ánh sáng trong khí quyển", "Do nước biển phản chiếu lên", "Do tầng ozone có màu xanh", "Do mắt người tự nhìn ra màu xanh"], c: 0, lv: 2 },
+            { q: "Máy kéo thực hiện công 60.000 J trong 20s. Công suất máy là:", a: ["3.000 W", "1.200.000 W", "1.200 W", "300 W"], c: 0, lv: 3 },
+            { q: "Nước có n=1.33. Vận tốc ánh sáng trong nước xấp xỉ bao nhiêu?", a: ["225.560 km/s", "300.000 km/s", "150.000 km/s", "200.000 km/s"], c: 0, lv: 3 },
+            { q: "Vật nâng cao 2m, trọng lượng 50N trong 5s. Công suất nâng là:", a: ["20 W", "500 W", "100 W", "250 W"], c: 0, lv: 3 },
+            { q: "Một chùm sáng truyền từ thủy tinh (n=1.5) ra không khí. Góc tới hạn là:", a: ["~41.8 độ", "48.6 độ", "30 độ", "60 độ"], c: 0, lv: 3 },
+            { q: "Động cơ công suất 2kW chạy trong 1 giờ thực hiện công là:", a: ["7.200.000 J", "2.000 J", "3.600 J", "120.000 J"], c: 0, lv: 3 }
         ];
 
-        const scoreList = ["0.2","0.4","0.6","0.8","5.0","5.4","5.8","6.0","8.0","9.0","9.2","9.4","9.6","9.8","10.0"];
-        let currentQ = 0;
-        let pool = [];
-        let user = { name: "", sbd: "" };
-        let activeHelp = { f: true, c: true, a: true };
-        let isAnswering = false;
+        const SCORES = ["0.2","0.4","0.6","0.8","5.0","5.4","5.8","6.0","8.0","9.0","9.2","9.4","9.6","9.8","10.0"];
+        let currentIdx = 0;
+        let gamePool = [];
+        let canClick = true;
 
-        function playSnd(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.pause();
-                el.currentTime = 0;
-                el.play().catch(e => console.log("Audio play blocked"));
-            }
+        function play(id) {
+            const s = document.getElementById('s-'+id);
+            if(s) { s.currentTime = 0; s.play().catch(()=>{}); }
         }
 
-        function renderScores() {
-            const side = document.getElementById('sidebar');
-            side.innerHTML = '';
-            scoreList.slice().reverse().forEach((s, i) => {
-                const idx = 14 - i;
-                const d = document.createElement('div');
-                d.className = `money-item ${currentQ === idx ? 'active' : ''} ${[4,9,14].includes(idx) ? 'milestone' : ''}`;
-                d.innerText = `Câu ${idx+1}: ${s}`;
-                side.appendChild(d);
+        function showMsg(txt) {
+            const b = document.getElementById('msg-box');
+            document.getElementById('msg-content').innerText = txt;
+            b.style.display = 'block';
+            setTimeout(() => b.style.display = 'none', 4000);
+        }
+
+        function initGame() {
+            const name = document.getElementById('name-in').value;
+            const sbd = document.getElementById('sbd-in').value;
+            if(!name || !sbd) return alert("Mày phải nhập đủ Tên và SBD mới được thi!");
+            
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-sbd').innerText = "SBD: " + sbd;
+            document.getElementById('intro').style.display = 'none';
+            
+            const l1 = QUESTIONS.filter(q => q.lv === 1).sort(() => Math.random()-0.5).slice(0,5);
+            const l2 = QUESTIONS.filter(q => q.lv === 2).sort(() => Math.random()-0.5).slice(0,5);
+            const l3 = QUESTIONS.filter(q => q.lv === 3).sort(() => Math.random()-0.5).slice(0,5);
+            gamePool = [...l1, ...l2, ...l3];
+
+            renderScoreBoard();
+            loadQuestion();
+        }
+
+        function renderScoreBoard() {
+            const board = document.getElementById('score-board');
+            board.innerHTML = '';
+            SCORES.forEach((val, i) => {
+                const div = document.createElement('div');
+                div.className = `money-item ${i === currentIdx ? 'active' : ''} ${[4,9,14].includes(i) ? 'milestone' : ''}`;
+                div.innerText = `Câu ${i+1}: ${val}`;
+                board.appendChild(div);
             });
         }
 
-        function shuffle(a) { a.sort(() => Math.random() - 0.5); return a; }
+        function loadQuestion() {
+            canClick = true;
+            const data = gamePool[currentIdx];
+            document.getElementById('q-area').innerText = `Câu ${currentIdx+1}: ${data.q}`;
+            
+            let rawAns = data.a.map((text, i) => ({ text, isCorrect: i === data.c }));
+            rawAns = rawAns.sort(() => Math.random() - 0.5);
 
-        function start() {
-            user.name = document.getElementById('u-name').value;
-            user.sbd = document.getElementById('u-sbd').value;
-            if(!user.name) {
-                alertCustom("Nhập tên đi mày!");
-                return;
+            for(let i=0; i<4; i++) {
+                const btn = document.getElementById(`ans-${i}`);
+                btn.querySelector('.txt').innerText = rawAns[i].text;
+                btn.dataset.correct = rawAns[i].isCorrect;
+                btn.classList.remove('selected', 'correct', 'wrong', 'ans-hidden', 'locked');
             }
-            document.getElementById('d-name').innerText = "Thí sinh: " + user.name;
-            document.getElementById('d-sbd').innerText = "SBD: " + user.sbd;
-            document.getElementById('login-screen').style.display = 'none';
-            
-            const l1 = shuffle(db.filter(x => x.lv === 1)).slice(0, 5);
-            const l2 = shuffle(db.filter(x => x.lv === 2)).slice(0, 5);
-            const l3 = shuffle(db.filter(x => x.lv === 3)).slice(0, 5);
-            pool = [...l1, ...l2, ...l3];
-            loadQ();
-            renderScores();
         }
 
-        function loadQ() {
-            isAnswering = false;
-            const data = pool[currentQ];
-            document.getElementById('q-text').innerText = `Câu ${currentQ+1}: ${data.q}`;
+        function checkAns(idx) {
+            if(!canClick) return;
+            canClick = false;
             
-            let options = data.a.map((t, i) => ({ t, is: i === data.c }));
-            shuffle(options);
-            
-            options.forEach((o, i) => {
-                const b = document.getElementById(`btn-${i}`);
-                b.innerText = `${String.fromCharCode(65+i)}: ${o.t}`;
-                b.dataset.correct = o.is;
-                b.classList.remove('selected', 'correct', 'wrong', 'disabled');
-                b.style.opacity = "1";
-                b.style.pointerEvents = "auto";
-            });
-        }
+            const btn = document.getElementById(`ans-${idx}`);
+            btn.classList.add('selected');
+            play('click');
 
-        function ans(idx) {
-            if(isAnswering) return;
-            const b = document.getElementById(`btn-${idx}`);
-            if(b.classList.contains('disabled')) return;
-
-            isAnswering = true;
-            b.classList.add('selected');
-            playSnd('snd-click');
-            
             setTimeout(() => {
-                if(b.dataset.correct === "true") {
-                    b.classList.add('correct');
-                    playSnd('snd-correct');
+                if(btn.dataset.correct === "true") {
+                    btn.classList.add('correct');
+                    play('correct');
                     setTimeout(() => {
-                        if(currentQ < 14) { 
-                            currentQ++; 
-                            loadQ(); 
-                            renderScores(); 
+                        if(currentIdx < 14) {
+                            currentIdx++;
+                            renderScoreBoard();
+                            loadQuestion();
                         } else {
-                            end(true);
+                            victory();
                         }
                     }, 1500);
                 } else {
-                    b.classList.add('wrong');
-                    playSnd('snd-wrong');
+                    btn.classList.add('wrong');
+                    play('wrong');
                     for(let i=0; i<4; i++) {
-                        const btn = document.getElementById(`btn-${i}`);
-                        if(btn.dataset.correct === "true") btn.classList.add('correct');
+                        const b = document.getElementById(`ans-${i}`);
+                        if(b.dataset.correct === "true") b.classList.add('correct');
                     }
-                    setTimeout(() => end(false), 2000);
+                    setTimeout(gameOver, 2000);
                 }
             }, 1000);
         }
 
-        function alertCustom(txt) {
-            const overlay = document.getElementById('msg-overlay');
-            document.getElementById('msg-text').innerText = txt;
-            overlay.style.display = 'block';
-            setTimeout(() => { overlay.style.display = 'none'; }, 5000);
+        function use5050() {
+            if(!canClick) return;
+            const btn50 = document.getElementById('help-50');
+            if(btn50.disabled) return;
+            btn50.disabled = true;
+
+            let incorrectOnes = [];
+            for(let i=0; i<4; i++) {
+                const b = document.getElementById(`ans-${i}`);
+                if(b.dataset.correct === "false") incorrectOnes.push(b);
+            }
+            incorrectOnes.sort(() => Math.random() - 0.5);
+            incorrectOnes[0].classList.add('ans-hidden');
+            incorrectOnes[1].classList.add('ans-hidden');
+            showMsg("Đã loại bỏ 2 phương án sai!");
         }
 
-        // --- HÀM 50:50 ĐÃ QUAY TRỞ LẠI ---
-        function f5050() {
-            if(!activeHelp.f || isAnswering) return;
-            activeHelp.f = false; 
-            document.getElementById('h-5050').classList.add('used');
-            
-            let incorrectIndices = [];
+        function useCall() {
+            if(!canClick) return;
+            const btn = document.getElementById('help-call');
+            if(btn.disabled) return;
+            btn.disabled = true;
+
+            let correctLabel = "A";
             for(let i=0; i<4; i++) {
-                if(document.getElementById(`btn-${i}`).dataset.correct === "false") {
-                    incorrectIndices.push(i);
+                if(document.getElementById(`ans-${i}`).dataset.correct === "true") {
+                    correctLabel = String.fromCharCode(65+i);
                 }
             }
-            shuffle(incorrectIndices);
-            // Ẩn 2 câu sai ngẫu nhiên
-            document.getElementById(`btn-${incorrectIndices[0]}`).classList.add('disabled');
-            document.getElementById(`btn-${incorrectIndices[1]}`).classList.add('disabled');
+            showMsg(`Người thân bảo: "Tao chắc chắn là ${correctLabel}!"`);
         }
 
-        function fCall() {
-            if(!activeHelp.c || isAnswering) return;
-            activeHelp.c = false; 
-            document.getElementById('h-call').classList.add('used');
-            
-            const correctBtnIdx = Array.from(document.querySelectorAll('.answer-btn')).findIndex(b => b.dataset.correct === "true");
-            const label = String.fromCharCode(65 + correctBtnIdx);
-            
-            alertCustom(`Người thân: "Tao tin chắc đáp án ${label} là đúng đó, tin tao đi!"`);
-        }
+        function useAud() {
+            if(!canClick) return;
+            const btn = document.getElementById('help-aud');
+            if(btn.disabled) return;
+            btn.disabled = true;
 
-        function fAud() {
-            if(!activeHelp.a || isAnswering) return;
-            activeHelp.a = false; 
-            document.getElementById('h-aud').classList.add('used');
-            
-            const correctBtnIdx = Array.from(document.querySelectorAll('.answer-btn')).findIndex(b => b.dataset.correct === "true");
-            const label = String.fromCharCode(65 + correctBtnIdx);
-            
-            alertCustom(`Khán giả: 82% bình chọn cho phương án ${label}!`);
-        }
-
-        function end(win) {
-            const res = document.createElement('div');
-            res.id = "result-screen";
-            let finalScore = win ? "10.0" : (currentQ > 0 ? scoreList[currentQ-1] : "0.0");
-            
-            if (!win) {
-                if (currentQ >= 10) finalScore = "8.0";
-                else if (currentQ >= 5) finalScore = "5.0";
+            let correctLabel = "A";
+            for(let i=0; i<4; i++) {
+                if(document.getElementById(`ans-${i}`).dataset.correct === "true") {
+                    correctLabel = String.fromCharCode(65+i);
+                }
             }
+            showMsg(`Khán giả: 80% chọn ${correctLabel}!`);
+        }
 
-            res.innerHTML = `
-                <h2 class="text-5xl font-bold text-yellow-400 mb-6 text-center px-4">${win ? 'XUẤT SẮC! MÀY LÀ TRIỆU PHÚ VẬT LÝ' : 'TIẾC QUÁ, DỪNG CUỘC CHƠI!'}</h2>
-                <div class="bg-blue-900 p-8 rounded-2xl border-4 border-yellow-500 text-center shadow-2xl">
-                    <p class="text-2xl mb-2">Thí sinh: <span class="text-yellow-400">${user.name}</span></p>
-                    <p class="text-xl">Vượt qua: ${win ? 15 : currentQ}/15 câu hỏi</p>
-                    <div class="my-6 py-4 bg-black rounded-lg">
-                        <p class="text-sm text-gray-400 uppercase tracking-widest">Điểm số cuối cùng</p>
-                        <p class="text-6xl font-black text-green-400">${finalScore}</p>
-                    </div>
-                </div>
-                <button class="bg-yellow-500 hover:bg-yellow-600 text-black px-10 py-4 rounded-full mt-8 font-black text-xl transition-transform hover:scale-110 shadow-lg" onclick="location.reload()">CHƠI LẠI TRẬN MỚI</button>
-            `;
-            document.body.appendChild(res);
+        function gameOver() {
+            let score = "0.0";
+            if(currentIdx >= 10) score = "8.0";
+            else if(currentIdx >= 5) score = "5.0";
+            else score = currentIdx > 0 ? SCORES[currentIdx-1] : "0.0";
+
+            alert(`DỪNG CUỘC CHƠI!\nThí sinh: ${document.getElementById('p-name').innerText}\n${document.getElementById('p-sbd').innerText}\nĐiểm số: ${score}`);
+            location.reload();
+        }
+
+        function victory() {
+            alert(`XUẤT SẮC!\nBạn đã trở thành Triệu phú Vật lý.\nĐiểm: 10.0`);
+            location.reload();
         }
     </script>
 </body>

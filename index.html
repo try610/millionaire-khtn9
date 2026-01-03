@@ -103,7 +103,7 @@
             padding-left: 40px;
             position: relative;
         }
-        .option-btn:hover { background: #3a506b; border-color: #ffd700; transform: scale(1.02); }
+        .option-btn:hover:not(:disabled) { background: #3a506b; border-color: #ffd700; transform: scale(1.02); }
         .option-btn.correct { background: #2ecc71 !important; border-color: #fff; color: white; animation: blink 0.5s infinite; }
         .option-btn.wrong { background: #e74c3c !important; border-color: #fff; }
         .option-btn.hidden { visibility: hidden; }
@@ -129,7 +129,7 @@
             font-size: 14px;
             transition: 0.3s;
         }
-        .btn-help:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+        .btn-help:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); border-color: #444; }
         .btn-help:hover:not(:disabled) { transform: rotate(10deg) scale(1.1); box-shadow: 0 0 15px gold; }
 
         #login-screen {
@@ -161,10 +161,6 @@
             text-align: center;
             width: 450px;
         }
-        .input-group {
-            position: relative;
-            margin-bottom: 25px;
-        }
         .input-group input {
             width: 100%;
             background: rgba(0, 0, 0, 0.4);
@@ -175,13 +171,10 @@
             font-size: 18px;
             transition: 0.3s;
             outline: none;
-            margin: 0;
+            margin-bottom: 20px;
         }
-        .input-group input:focus {
-            border-color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-            background: rgba(0, 0, 0, 0.6);
-        }
+        .input-group input:focus { border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+
         .start-btn {
             background: linear-gradient(45deg, #f1c40f, #e67e22);
             color: #000;
@@ -190,21 +183,14 @@
             border-radius: 50px;
             font-size: 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
-            transition: 0.3s;
             cursor: pointer;
             border: none;
-        }
-        .start-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(230, 126, 34, 0.6);
         }
 
         .overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             display: none;
             justify-content: center;
             align-items: center;
@@ -213,11 +199,41 @@
         .modal {
             background: #1a2a6c;
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 20px;
             border: 2px solid gold;
             text-align: center;
+            width: 90%;
             max-width: 500px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
         }
+
+        /* Chart Styles */
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-bottom;
+            height: 200px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-bottom: 2px solid #fff;
+        }
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 20%;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, #f1c40f, #ff9800);
+            border-radius: 5px 5px 0 0;
+            transition: height 1s ease-out;
+            position: relative;
+        }
+        .bar-label { margin-top: 10px; font-weight: bold; }
+        .bar-percent { font-size: 12px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -225,13 +241,10 @@
 <div class="game-container" id="game-app">
     <div id="login-screen">
         <div class="login-card">
-            <h1 class="text-3xl font-bold mb-8 text-yellow-500 uppercase tracking-widest">Ai Là Triệu Phú</h1>
-            <p class="mb-6 text-gray-300">Ôn tập Khoa học tự nhiên 9</p>
+            <h1 class="text-3xl font-bold mb-8 text-yellow-500 uppercase">Ai Là Triệu Phú</h1>
             <div class="input-group">
-                <input type="text" id="user-name" placeholder="Họ và tên thí sinh" autocomplete="off">
-            </div>
-            <div class="input-group">
-                <input type="text" id="user-sbd" placeholder="Số báo danh" autocomplete="off">
+                <input type="text" id="user-name" placeholder="Họ và tên thí sinh">
+                <input type="text" id="user-sbd" placeholder="Số báo danh">
             </div>
             <button onclick="startGame()" class="start-btn">Sẵn Sàng</button>
         </div>
@@ -264,10 +277,16 @@
 </div>
 
 <div id="overlay" class="overlay">
-    <div class="modal">
+    <div class="modal" id="modal-container">
         <h2 id="modal-title" class="text-2xl font-bold mb-4 text-yellow-400"></h2>
-        <p id="modal-body" class="mb-6 text-lg"></p>
-        <button id="modal-btn" onclick="closeModal()" class="bg-yellow-600 hover:bg-yellow-500 px-8 py-2 rounded-full font-bold">Tiếp tục</button>
+        <div id="modal-body" class="text-lg"></div>
+        <div id="audience-chart" class="chart-container" style="display: none;">
+            <div class="bar-wrapper"><span id="p-0" class="bar-percent">0%</span><div id="bar-0" class="bar" style="height: 0%"></div><span class="bar-label">A</span></div>
+            <div class="bar-wrapper"><span id="p-1" class="bar-percent">0%</span><div id="bar-1" class="bar" style="height: 0%"></div><span class="bar-label">B</span></div>
+            <div class="bar-wrapper"><span id="p-2" class="bar-percent">0%</span><div id="bar-2" class="bar" style="height: 0%"></div><span class="bar-label">C</span></div>
+            <div class="bar-wrapper"><span id="p-3" class="bar-percent">0%</span><div id="bar-3" class="bar" style="height: 0%"></div><span class="bar-label">D</span></div>
+        </div>
+        <button id="modal-btn" onclick="closeModal()" class="mt-8 bg-yellow-600 hover:bg-yellow-500 px-8 py-2 rounded-full font-bold">Tiếp tục</button>
     </div>
 </div>
 
@@ -315,40 +334,19 @@
         return array;
     }
 
-    function initQuestions() {
-        // Xáo trộn từng tầng câu hỏi
-        const l1 = shuffle([...questionBank.level1]);
-        const l2 = shuffle([...questionBank.level2]);
-        const l3 = shuffle([...questionBank.level3]);
-        questions = [...l1, ...l2, ...l3];
-    }
-
-    function renderScoreBoard() {
-        const board = document.getElementById('score-list');
-        board.innerHTML = '';
-        prizeMoney.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = `score-item ${index === currentQuestionIndex ? 'active' : ''}`;
-            if (item.q === 5) div.classList.add('milestone-5');
-            if (item.q === 10) div.classList.add('milestone-10');
-            if (item.q === 15) div.classList.add('milestone-15');
-            div.innerHTML = `<span>Câu ${item.q}</span><span>${item.p}đ</span>`;
-            board.appendChild(div);
-        });
-    }
-
     function startGame() {
         const name = document.getElementById('user-name').value;
         const sbd = document.getElementById('user-sbd').value;
-        if (!name.trim() || !sbd.trim()) {
-            alert("Mày quên nhập tên với SBD kìa!");
-            return;
-        }
+        if (!name.trim() || !sbd.trim()) return alert("Nhập đủ thông tin mới cho chơi!");
+        
         document.getElementById('display-name').innerText = `Thí sinh: ${name}`;
         document.getElementById('display-sbd').innerText = `SBD: ${sbd}`;
         document.getElementById('login-screen').style.display = 'none';
         
-        initQuestions();
+        const l1 = shuffle([...questionBank.level1]);
+        const l2 = shuffle([...questionBank.level2]);
+        const l3 = shuffle([...questionBank.level3]);
+        questions = [...l1, ...l2, ...l3];
         currentQuestionIndex = 0;
         loadQuestion();
     }
@@ -357,54 +355,31 @@
         const qData = questions[currentQuestionIndex];
         document.getElementById('question-text').innerText = `${qData.q}`;
         
-        // Chuẩn bị options và xáo trộn
-        currentShuffledOptions = qData.a.map((text, i) => ({ 
-            text, 
-            originalIndex: i,
-            isCorrect: i === qData.c 
-        }));
+        currentShuffledOptions = qData.a.map((text, i) => ({ text, isCorrect: i === qData.c }));
         shuffle(currentShuffledOptions);
         
         currentShuffledOptions.forEach((opt, i) => {
             const btn = document.getElementById(`opt-${i}`);
             btn.innerText = `${String.fromCharCode(65 + i)}: ${opt.text}`;
             btn.className = 'option-btn';
-            btn.onclick = () => checkAnswer(opt.isCorrect, i);
             btn.disabled = false;
+            btn.onclick = () => checkAnswer(opt.isCorrect, i);
         });
-
         renderScoreBoard();
     }
 
     function checkAnswer(isCorrect, btnIndex) {
-        const btns = document.querySelectorAll('.option-btn');
-        btns.forEach(b => b.onclick = null);
-
+        document.querySelectorAll('.option-btn').forEach(b => b.onclick = null);
         if (isCorrect) {
             document.getElementById(`opt-${btnIndex}`).classList.add('correct');
             setTimeout(() => {
-                if (currentQuestionIndex === 14) {
-                    showModal("CHIẾN THẮNG!", "Mày quá đỉnh! 10 điểm tuyệt đối đã thuộc về mày!");
-                } else {
-                    currentQuestionIndex++;
-                    loadQuestion();
-                }
-            }, 1200);
+                if (currentQuestionIndex === 14) showModal("CHIẾN THẮNG!", "Mày là triệu phú KHTN 9!");
+                else { currentQuestionIndex++; loadQuestion(); }
+            }, 1000);
         } else {
             document.getElementById(`opt-${btnIndex}`).classList.add('wrong');
-            // Tìm và highlight đáp án đúng
-            currentShuffledOptions.forEach((opt, i) => {
-                if (opt.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct');
-            });
-
-            setTimeout(() => {
-                let finalScore = 0;
-                if (currentQuestionIndex < 5) finalScore = 0;
-                else if (currentQuestionIndex < 10) finalScore = 5;
-                else finalScore = 9;
-
-                showModal("KẾT THÚC!", `Mày đã dừng chân ở câu ${currentQuestionIndex + 1}. Điểm số: ${finalScore}.`, true);
-            }, 1500);
+            currentShuffledOptions.forEach((o, i) => { if(o.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct'); });
+            setTimeout(() => showModal("KẾT THÚC!", "Sai rồi mày ơi, về học bài thêm đi!", true), 1200);
         }
     }
 
@@ -412,15 +387,12 @@
         if (usedHelps['5050']) return;
         usedHelps['5050'] = true;
         document.getElementById('help-5050').disabled = true;
-
-        let hiddenCount = 0;
-        const indices = [0, 1, 2, 3];
-        shuffle(indices);
-
+        let hidden = 0;
+        let indices = shuffle([0, 1, 2, 3]);
         for (let i of indices) {
-            if (!currentShuffledOptions[i].isCorrect && hiddenCount < 2) {
+            if (!currentShuffledOptions[i].isCorrect && hidden < 2) {
                 document.getElementById(`opt-${i}`).classList.add('hidden');
-                hiddenCount++;
+                hidden++;
             }
         }
     }
@@ -429,31 +401,71 @@
         if (usedHelps['call']) return;
         usedHelps['call'] = true;
         document.getElementById('help-call').disabled = true;
-        const correctOpt = currentShuffledOptions.find(o => o.isCorrect);
-        showModal("Người thân bảo là...", `Đáp án đúng là ${correctOpt.text} đấy, tin tao đi!`);
+        const correct = currentShuffledOptions.find(o => o.isCorrect);
+        showModal("Gọi điện", `Tao nghĩ đáp án đúng là: ${correct.text}`);
     }
 
     function helpAudience() {
         if (usedHelps['audience']) return;
         usedHelps['audience'] = true;
         document.getElementById('help-audience').disabled = true;
-        showModal("Khán giả khuyên...", "Phần lớn khán giả chọn cái phương án đúng kìa!");
+
+        // Logic biểu đồ: Đáp án đúng chiếm đa số
+        let percentages = [0, 0, 0, 0];
+        let correctIdx = currentShuffledOptions.findIndex(o => o.isCorrect);
+        
+        percentages[correctIdx] = Math.floor(Math.random() * (85 - 60) + 60);
+        let remaining = 100 - percentages[correctIdx];
+        
+        for (let i = 0; i < 4; i++) {
+            if (i === correctIdx) continue;
+            let val = Math.floor(Math.random() * (remaining / 2));
+            percentages[i] = val;
+            remaining -= val;
+        }
+        // Gán nốt phần còn lại cho ô cuối cùng (không phải đáp án đúng)
+        for (let i = 0; i < 4; i++) {
+            if (i !== correctIdx && percentages[i] === 0) { percentages[i] = remaining; break; }
+        }
+
+        showModal("Khán giả bình chọn", "Hầu hết khán giả đều đồng lòng chọn một phương án...");
+        document.getElementById('audience-chart').style.display = 'flex';
+        
+        percentages.forEach((p, i) => {
+            const bar = document.getElementById(`bar-${i}`);
+            const text = document.getElementById(`p-${i}`);
+            bar.style.height = '0%';
+            text.innerText = '0%';
+            setTimeout(() => {
+                bar.style.height = p + '%';
+                text.innerText = p + '%';
+            }, 100);
+        });
+    }
+
+    function renderScoreBoard() {
+        const board = document.getElementById('score-list');
+        board.innerHTML = '';
+        prizeMoney.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = `score-item ${index === currentQuestionIndex ? 'active' : ''}`;
+            if ([4, 9, 14].includes(index)) div.style.fontWeight = 'bold';
+            div.innerHTML = `<span>Câu ${item.q}</span><span>${item.p}đ</span>`;
+            board.appendChild(div);
+        });
     }
 
     function showModal(title, body, isGameOver = false) {
         document.getElementById('modal-title').innerText = title;
         document.getElementById('modal-body').innerText = body;
+        document.getElementById('audience-chart').style.display = 'none';
         document.getElementById('overlay').style.display = 'flex';
-        if (isGameOver) {
-            const btn = document.getElementById('modal-btn');
-            btn.innerText = "Thử lại";
-            btn.onclick = () => location.reload();
-        }
+        const btn = document.getElementById('modal-btn');
+        btn.innerText = isGameOver ? "Chơi lại" : "Tiếp tục";
+        btn.onclick = isGameOver ? () => location.reload() : closeModal;
     }
 
-    function closeModal() {
-        document.getElementById('overlay').style.display = 'none';
-    }
+    function closeModal() { document.getElementById('overlay').style.display = 'none'; }
 </script>
 </body>
 </html>

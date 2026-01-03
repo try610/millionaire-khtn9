@@ -130,7 +130,6 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
         
-        /* Overlay thông báo thay thế modal */
         #msg-overlay {
             position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
             background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px;
@@ -152,16 +151,15 @@
     <audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3"></audio>
 
     <div id="login-screen">
-        <h1 class="text-6xl font-bold text-yellow-400 mb-2">AI LÀ TRIỆU PHÚ</h1>
-        <p class="text-xl text-blue-300 mb-8 italic">Vật Lý 9</p>
+        <h1 class="text-6xl font-bold text-yellow-400 mb-2">VẬT LÝ 9</h1>
+        <p class="text-xl text-blue-300 mb-8 italic">Chương trình GDPT 2018 (Chuẩn 50 câu)</p>
         <div class="flex flex-col gap-4">
-            <input type="text" id="u-name" class="p-4 rounded-xl text-black w-80 text-lg" placeholder="Nhập tên của mày...">
+            <input type="text" id="u-name" class="p-4 rounded-xl text-black w-80 text-lg" placeholder="Nhập tên của bạn...">
             <input type="text" id="u-sbd" class="p-4 rounded-xl text-black w-80 text-lg" placeholder="Số báo danh">
             <button class="bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold text-xl transition" onclick="start()">VÀO STUDIO</button>
         </div>
     </div>
 
-    <!-- Thông báo thay cho Alert -->
     <div id="msg-overlay" onclick="this.style.display='none'">
         <p id="msg-text" class="text-xl font-bold"></p>
         <p class="text-sm mt-2 opacity-80">(Bấm vào đây để đóng)</p>
@@ -240,6 +238,15 @@
         let activeHelp = { f: true, c: true, a: true };
         let isAnswering = false;
 
+        function playSnd(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.pause();
+                el.currentTime = 0;
+                el.play().catch(e => console.log("Audio play blocked"));
+            }
+        }
+
         function renderScores() {
             const side = document.getElementById('sidebar');
             side.innerHTML = '';
@@ -293,16 +300,17 @@
 
         function ans(idx) {
             if(isAnswering) return;
-            isAnswering = true;
-            
             const b = document.getElementById(`btn-${idx}`);
+            if(b.classList.contains('disabled')) return;
+
+            isAnswering = true;
             b.classList.add('selected');
-            document.getElementById('snd-click').play();
+            playSnd('snd-click');
             
             setTimeout(() => {
                 if(b.dataset.correct === "true") {
                     b.classList.add('correct');
-                    document.getElementById('snd-correct').play();
+                    playSnd('snd-correct');
                     setTimeout(() => {
                         if(currentQ < 14) { 
                             currentQ++; 
@@ -314,8 +322,7 @@
                     }, 1500);
                 } else {
                     b.classList.add('wrong');
-                    document.getElementById('snd-wrong').play();
-                    // Show correct answer
+                    playSnd('snd-wrong');
                     for(let i=0; i<4; i++) {
                         const btn = document.getElementById(`btn-${i}`);
                         if(btn.dataset.correct === "true") btn.classList.add('correct');
@@ -332,6 +339,7 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 5000);
         }
 
+        // --- HÀM 50:50 ĐÃ QUAY TRỞ LẠI ---
         function f5050() {
             if(!activeHelp.f || isAnswering) return;
             activeHelp.f = false; 
@@ -344,7 +352,7 @@
                 }
             }
             shuffle(incorrectIndices);
-            // Giấu 2 câu sai
+            // Ẩn 2 câu sai ngẫu nhiên
             document.getElementById(`btn-${incorrectIndices[0]}`).classList.add('disabled');
             document.getElementById(`btn-${incorrectIndices[1]}`).classList.add('disabled');
         }
@@ -376,7 +384,6 @@
             res.id = "result-screen";
             let finalScore = win ? "10.0" : (currentQ > 0 ? scoreList[currentQ-1] : "0.0");
             
-            // Mốc an toàn
             if (!win) {
                 if (currentQ >= 10) finalScore = "8.0";
                 else if (currentQ >= 5) finalScore = "5.0";

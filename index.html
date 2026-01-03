@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ai là triệu phú - KHTN 9</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: radial-gradient(circle, #1a2a6c, #b21f1f, #fdbb2d);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+        .game-container {
+            width: 95vw;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            background: rgba(0, 0, 0, 0.85);
+            border: 4px solid #ffd700;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            overflow: hidden;
+        }
+        .quiz-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .score-board {
+            width: 180px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            font-size: 14px;
+        }
+        .score-item {
+            padding: 2px 8px;
+            margin: 1px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .score-item.active { background: #ff9800; color: black; font-weight: bold; }
+        .score-item.milestone-5 { color: #ffff00; font-weight: bold; }
+        .score-item.milestone-10 { color: #00ffff; font-weight: bold; }
+        .score-item.milestone-15 { color: #ff0000; font-weight: bold; }
+
+        .question-box {
+            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+            border: 2px solid #aaa;
+            padding: 20px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .option-btn {
+            background: linear-gradient(to bottom, #141e30, #243b55);
+            border: 2px solid #aaa;
+            padding: 15px;
+            border-radius: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: left;
+            padding-left: 40px;
+            position: relative;
+        }
+        .option-btn:hover { background: #3a506b; border-color: #ffd700; transform: scale(1.02); }
+        .option-btn.correct { background: #2ecc71 !important; border-color: #fff; color: white; animation: blink 0.5s infinite; }
+        .option-btn.wrong { background: #e74c3c !important; border-color: #fff; }
+        .option-btn.hidden { visibility: hidden; }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .btn-help {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 2px solid gold;
+            background: linear-gradient(135deg, #333, #000);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .btn-help:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+        .btn-help:hover:not(:disabled) { transform: rotate(10deg) scale(1.1); box-shadow: 0 0 15px gold; }
+
+        #login-screen {
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bc04?auto=format&fit=crop&q=80&w=1200') center/cover;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+        }
+        #login-screen::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 50, 0.85);
+            border-radius: 16px;
+        }
+        .login-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 450px;
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        .input-group input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: white;
+            font-size: 18px;
+            transition: 0.3s;
+            outline: none;
+            margin: 0;
+        }
+        .input-group input:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .start-btn {
+            background: linear-gradient(45deg, #f1c40f, #e67e22);
+            color: #000;
+            font-weight: 900;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
+            transition: 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(230, 126, 34, 0.6);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        .modal {
+            background: #1a2a6c;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid gold;
+            text-align: center;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="game-app">
+    <div id="login-screen">
+        <div class="login-card">
+            <h1 class="text-3xl font-bold mb-8 text-yellow-500 uppercase tracking-widest">Ai Là Triệu Phú</h1>
+            <p class="mb-6 text-gray-300">Ôn tập Khoa học tự nhiên 9</p>
+            <div class="input-group">
+                <input type="text" id="user-name" placeholder="Họ và tên thí sinh" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <input type="text" id="user-sbd" placeholder="Số báo danh" autocomplete="off">
+            </div>
+            <button onclick="startGame()" class="start-btn">Sẵn Sàng</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="text-xl font-bold">
+            <span id="display-name" class="mr-6 text-yellow-400">---</span>
+            <span id="display-sbd" class="text-blue-400">---</span>
+        </div>
+        <div class="flex gap-4">
+            <button class="btn-help" id="help-5050" onclick="help5050()">50:50</button>
+            <button class="btn-help" id="help-call" onclick="helpCall()">📞</button>
+            <button class="btn-help" id="help-audience" onclick="helpAudience()">📊</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="quiz-section">
+            <div id="question-text" class="question-box"></div>
+            <div class="options-grid">
+                <button class="option-btn" id="opt-0">A: </button>
+                <button class="option-btn" id="opt-1">B: </button>
+                <button class="option-btn" id="opt-2">C: </button>
+                <button class="option-btn" id="opt-3">D: </button>
+            </div>
+        </div>
+        <div class="score-board" id="score-list"></div>
+    </div>
+</div>
+
+<div id="overlay" class="overlay">
+    <div class="modal">
+        <h2 id="modal-title" class="text-2xl font-bold mb-4 text-yellow-400"></h2>
+        <p id="modal-body" class="mb-6 text-lg"></p>
+        <button id="modal-btn" onclick="closeModal()" class="bg-yellow-600 hover:bg-yellow-500 px-8 py-2 rounded-full font-bold">Tiếp tục</button>
+    </div>
+</div>
+
+<script>
+    const prizeMoney = [
+        { q: 1, p: 1 }, { q: 2, p: 2 }, { q: 3, p: 3 }, { q: 4, p: 4 }, { q: 5, p: 5 }, 
+        { q: 6, p: 5.5 }, { q: 7, p: 6 }, { q: 8, p: 7 }, { q: 9, p: 8 }, { q: 10, p: 9 }, 
+        { q: 11, p: 9.2 }, { q: 12, p: 9.5 }, { q: 13, p: 9.7 }, { q: 14, p: 9.8 }, { q: 15, p: 10 } 
+    ];
+
+    const questionBank = {
+        level1: [ 
+            { q: "Chiết suất của một môi trường có giá trị bằng tỉ số nào dưới đây?", a: ["Tốc độ ánh sáng trong chân không và tốc độ ánh sáng trong môi trường đó", "Tốc độ ánh sáng trong môi trường và tốc độ ánh sáng trong chân không", "Góc tới và góc khúc xạ", "Góc khúc xạ và góc tới"], c: 0 },
+            { q: "Khi tia sáng truyền xiên góc từ môi trường này sang môi trường khác, hiện tượng tia sáng bị lệch khỏi phương truyền ban đầu gọi là gì?", a: ["Sự khúc xạ ánh sáng", "Sự phản xạ ánh sáng", "Sự tán sắc ánh sáng", "Sự phản xạ toàn phần"], c: 0 },
+            { q: "Ánh sáng chỉ có một màu nhất định và không bị tán sắc khi đi qua lăng kính được gọi là gì?", a: ["Ánh sáng màu", "Ánh sáng trắng", "Ánh sáng Mặt Trời", "Ánh sáng tổ hợp"], c: 0 },
+            { q: "Theo định luật khúc xạ ánh sáng, tia tới và tia khúc xạ nằm ở đâu so với pháp tuyến tại điểm tới?", a: ["Nằm ở hai bên pháp tuyến", "Nằm cùng một bên pháp tuyến", "Nằm trùng với pháp tuyến", "Tùy thuộc vào chiết suất môi trường"], c: 0 },
+            { q: "Màu sắc của một vật không tự phát sáng được nhìn thấy phụ thuộc vào yếu tố nào?", a: ["Màu sắc của ánh sáng bị vật đó hấp thụ và phản xạ", "Kích thước của vật", "Nhiệt độ của vật", "Độ cao của vật so với mặt đất"], c: 0 }
+        ],
+        level2: [ 
+            { q: "Ánh sáng Mặt Trời có tác dụng quan trọng nào sau đây đối với sự sống trên Trái Đất?", a: ["Cung cấp năng lượng cho quá trình quang hợp của cây xanh", "Làm thay đổi khối lượng của Trái Đất", "Giúp Trái Đất quay nhanh hơn", "Loại bỏ hoàn toàn khí carbon dioxide"], c: 0 },
+            { q: "Tầng ozone có vai trò gì trong việc bảo vệ các sinh vật trên Trái Đất?", a: ["Hấp thụ hầu hết các tia tử ngoại độc hại từ Mặt Trời", "Ngăn cản sự khúc xạ của ánh sáng qua khí quyển", "Giúp ánh sáng Mặt Trời tán sắc mạnh hơn", "Tạo ra ánh sáng màu cho bầu trời"], c: 0 },
+            { q: "Sự tán sắc ánh sáng Mặt Trời qua lăng kính thực chất là quá trình gì?", a: ["Phân tích ánh sáng trắng thành dải màu biến thiên liên tục", "Tạo ra ánh sáng mới từ lăng kính", "Làm mất đi màu sắc của ánh sáng", "Hấp thụ tất cả các tia sáng trừ tia màu tím"], c: 0 },
+            { q: "Giải thích vì sao ta nhìn thấy lá cây có màu xanh lục dưới ánh sáng Mặt Trời?", a: ["Vì lá cây phản xạ tốt ánh sáng màu xanh lục và hấp thụ các màu khác", "Vì lá cây hấp thụ ánh sáng xanh lục và phản xạ các màu khác", "Vì lá cây tự phát ra ánh sáng màu xanh lục", "Vì ánh sáng trắng bị tán sắc bên trong lá cây"], c: 0 },
+            { q: "Khi vẽ sơ đồ đường truyền của tia sáng qua lăng kính trong không khí, tia ló có xu hướng lệch về đâu?", a: ["Lệch về phía đáy lăng kính", "Lệch về phía đỉnh lăng kính", "Giữ nguyên phương của tia tới", "Vuông góc với mặt đáy lăng kính"], c: 0 }
+        ],
+        level3: [ 
+            { q: "Một động cơ điện thực hiện công 120 kJ trong thời gian 1 phút. Công suất của động cơ này là:", a: ["2000 W", "120000 W", "120 W", "2 W"], c: 0 },
+            { q: "Chiếu một tia sáng từ không khí vào thủy tinh có chiết suất n = 1,5. Nếu sin của góc tới bằng 0,75 thì sin của góc khúc xạ bằng bao nhiêu?", a: ["0,5", "0,8", "1,125", "0,25"], c: 0 },
+            { q: "Điều kiện cần để xảy ra hiện tượng phản xạ toàn phần là tia sáng phải truyền từ môi trường nào?", a: ["Từ môi trường chiết quang hơn sang môi trường chiết quang kém hơn", "Từ môi trường chiết quang kém sang môi trường chiết quang hơn", "Từ không khí vào bất kỳ môi trường chất lỏng nào", "Luôn xảy ra khi ánh sáng truyền qua mặt phân cách"], c: 0 },
+            { q: "Trong thí nghiệm tạo quang phổ, để tách dải màu rõ nét nhất trên màn, ta cần điều chỉnh yếu tố nào?", a: ["Góc tới của tia sáng vào mặt bên của lăng kính", "Độ dày của màn chắn", "Khoảng cách từ nguồn sáng đến lăng kính", "Nhiệt độ của lăng kính"], c: 0 },
+            { q: "Ánh sáng truyền từ nước (n = 1,33) sang không khí. Góc tới hạn phản xạ toàn phần i_th được xác định bởi công thức nào?", a: ["sin i_th = 1 / 1,33", "sin i_th = 1,33", "cos i_th = 1 / 1,33", "tan i_th = 1 / 1,33"], c: 0 }
+        ]
+    };
+
+    let currentQuestionIndex = 0;
+    let questions = [];
+    let currentShuffledOptions = [];
+    let usedHelps = { '5050': false, 'call': false, 'audience': false };
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function initQuestions() {
+        // Xáo trộn từng tầng câu hỏi
+        const l1 = shuffle([...questionBank.level1]);
+        const l2 = shuffle([...questionBank.level2]);
+        const l3 = shuffle([...questionBank.level3]);
+        questions = [...l1, ...l2, ...l3];
+    }
+
+    function renderScoreBoard() {
+        const board = document.getElementById('score-list');
+        board.innerHTML = '';
+        prizeMoney.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = `score-item ${index === currentQuestionIndex ? 'active' : ''}`;
+            if (item.q === 5) div.classList.add('milestone-5');
+            if (item.q === 10) div.classList.add('milestone-10');
+            if (item.q === 15) div.classList.add('milestone-15');
+            div.innerHTML = `<span>Câu ${item.q}</span><span>${item.p}đ</span>`;
+            board.appendChild(div);
+        });
+    }
+
+    function startGame() {
+        const name = document.getElementById('user-name').value;
+        const sbd = document.getElementById('user-sbd').value;
+        if (!name.trim() || !sbd.trim()) {
+            alert("Mày quên nhập tên với SBD kìa!");
+            return;
+        }
+        document.getElementById('display-name').innerText = `Thí sinh: ${name}`;
+        document.getElementById('display-sbd').innerText = `SBD: ${sbd}`;
+        document.getElementById('login-screen').style.display = 'none';
+        
+        initQuestions();
+        currentQuestionIndex = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const qData = questions[currentQuestionIndex];
+        document.getElementById('question-text').innerText = `${qData.q}`;
+        
+        // Chuẩn bị options và xáo trộn
+        currentShuffledOptions = qData.a.map((text, i) => ({ 
+            text, 
+            originalIndex: i,
+            isCorrect: i === qData.c 
+        }));
+        shuffle(currentShuffledOptions);
+        
+        currentShuffledOptions.forEach((opt, i) => {
+            const btn = document.getElementById(`opt-${i}`);
+            btn.innerText = `${String.fromCharCode(65 + i)}: ${opt.text}`;
+            btn.className = 'option-btn';
+            btn.onclick = () => checkAnswer(opt.isCorrect, i);
+            btn.disabled = false;
+        });
+
+        renderScoreBoard();
+    }
+
+    function checkAnswer(isCorrect, btnIndex) {
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach(b => b.onclick = null);
+
+        if (isCorrect) {
+            document.getElementById(`opt-${btnIndex}`).classList.add('correct');
+            setTimeout(() => {
+                if (currentQuestionIndex === 14) {
+                    showModal("CHIẾN THẮNG!", "Mày quá đỉnh! 10 điểm tuyệt đối đã thuộc về mày!");
+                } else {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            }, 1200);
+        } else {
+            document.getElementById(`opt-${btnIndex}`).classList.add('wrong');
+            // Tìm và highlight đáp án đúng
+            currentShuffledOptions.forEach((opt, i) => {
+                if (opt.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct');
+            });
+
+            setTimeout(() => {
+                let finalScore = 0;
+                if (currentQuestionIndex < 5) finalScore = 0;
+                else if (currentQuestionIndex < 10) finalScore = 5;
+                else finalScore = 9;
+
+                showModal("KẾT THÚC!", `Mày đã dừng chân ở câu ${currentQuestionIndex + 1}. Điểm số: ${finalScore}.`, true);
+            }, 1500);
+        }
+    }
+
+    function help5050() {
+        if (usedHelps['5050']) return;
+        usedHelps['5050'] = true;
+        document.getElementById('help-5050').disabled = true;
+
+        let hiddenCount = 0;
+        const indices = [0, 1, 2, 3];
+        shuffle(indices);
+
+        for (let i of indices) {
+            if (!currentShuffledOptions[i].isCorrect && hiddenCount < 2) {
+                document.getElementById(`opt-${i}`).classList.add('hidden');
+                hiddenCount++;
+            }
+        }
+    }
+
+    function helpCall() {
+        if (usedHelps['call']) return;
+        usedHelps['call'] = true;
+        document.getElementById('help-call').disabled = true;
+        const correctOpt = currentShuffledOptions.find(o => o.isCorrect);
+        showModal("Người thân bảo là...", `Đáp án đúng là ${correctOpt.text} đấy, tin tao đi!`);
+    }
+
+    function helpAudience() {
+        if (usedHelps['audience']) return;
+        usedHelps['audience'] = true;
+        document.getElementById('help-audience').disabled = true;
+        showModal("Khán giả khuyên...", "Phần lớn khán giả chọn cái phương án đúng kìa!");
+    }
+
+    function showModal(title, body, isGameOver = false) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-body').innerText = body;
+        document.getElementById('overlay').style.display = 'flex';
+        if (isGameOver) {
+            const btn = document.getElementById('modal-btn');
+            btn.innerText = "Thử lại";
+            btn.onclick = () => location.reload();
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('overlay').style.display = 'none';
+    }
+</script>
+</body>
+</html>

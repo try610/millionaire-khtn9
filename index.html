@@ -260,7 +260,7 @@
     function startGame() {
         const name = document.getElementById('name-input').value;
         const sbd = document.getElementById('sbd-input').value;
-        if (!name || !sbd) { alert("Nhập đủ thông tin đi mày!"); return; }
+        if (!name || !sbd) { alert("Nhập đủ thông tin đi BẠN!"); return; }
         
         // Kích hoạt âm thanh (Tránh bị trình duyệt block)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -344,7 +344,7 @@
         bgAudio.pause();
         document.getElementById('result-screen').classList.remove('hidden');
         let finalScore = win ? "10" : (currentIdx > 0 ? scores[currentIdx - 1] : "0");
-        document.getElementById('result-text').innerText = win ? "QUÁ ĐỈNH! MÀY LÀ TRIỆU PHÚ KHTN 9!" : `GAME OVER!\nĐIỂM CỦA MÀY: ${finalScore}`;
+        document.getElementById('result-text').innerText = win ? "QUÁ ĐỈNH! BẠN LÀ TRIỆU PHÚ KHTN 9!" : `GAME OVER!\nĐIỂM CỦA BẠN: ${finalScore}`;
     }
 
     // Trợ giúp
@@ -395,3 +395,4 @@
 </script>
 </body>
 </html>
+

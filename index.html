@@ -155,11 +155,11 @@
 <body>
 
 <div class="game-container">
-    <!-- ÂM THANH SOUNDJAY THEO YÊU CẦU -->
-    <audio id="snd-correct" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
-    <audio id="snd-wrong" src="https://www.soundjay.com/buttons/button-10.mp3"></audio>
-    <audio id="snd-click" src="https://www.soundjay.com/buttons/button-16.mp3"></audio>
-    <audio id="audio-bg" loop src="https://actions.google.com/sounds/v1/ambiences/humming_room.ogg"></audio>
+    <!-- ÂM THANH: DÙNG NGUỒN DỰ PHÒNG ỔN ĐỊNH HƠN -->
+    <audio id="snd-correct" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+    <audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3"></audio>
+    <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="audio-bg" loop src="https://actions.google.com/sounds/v1/ambiences/industrial_hum.ogg"></audio>
 
     <div id="intro-screen" class="overlay">
         <div class="form-box">
@@ -168,7 +168,7 @@
             <input type="text" id="name-input" placeholder="Họ và tên..." style="width: 80%; padding: 0.8vw; margin-bottom: 1vw; border-radius: 5px;">
             <input type="text" id="sbd-input" placeholder="SBD..." style="width: 80%; padding: 0.8vw; margin-bottom: 1vw; border-radius: 5px;">
             <br>
-            <button class="btn-start" onclick="startGame()">BẮT ĐẦU</button>
+            <button class="btn-start" id="start-btn" onclick="startGame()">BẮT ĐẦU</button>
         </div>
     </div>
 
@@ -222,32 +222,23 @@
 </div>
 
 <script>
-    // BỘ CÂU HỎI CHUẨN KHTN 9 (TT 32/2018) THEO MỨC ĐỘ
+    // BỘ CÂU HỎI CHUẨN KHTN 9 (TT 32/2018)
     const rawQuestions = [
-        // Công suất
-        { q: "Vận dụng công thức tính công suất P = A/t. Một máy thực hiện công 1200J trong 2 phút. Công suất là?", a: "600W", b: "10W", c: "2400W", d: "100W", cIdx: 1 },
+        { q: "Vận dụng công thức P = A/t. Một thiết bị thực hiện công 6000J trong 1 phút. Công suất của nó là?", a: "100W", b: "6000W", c: "60W", d: "10W", cIdx: 0 },
         { q: "Đơn vị đo công suất trong hệ SI là?", a: "Jun (J)", b: "Oát (W)", c: "Mã lực (HP)", d: "Niutơn (N)", cIdx: 1 },
-        
-        // Khúc xạ ánh sáng
-        { q: "Phát biểu định luật khúc xạ ánh sáng: Tia khúc xạ nằm trong mặt phẳng tới và?", a: "Nằm cùng phía với tia tới", b: "Nằm ở phía bên kia pháp tuyến so với tia tới", c: "Trùng với pháp tuyến", d: "Trùng với tia tới", cIdx: 1 },
-        { q: "Chiết suất n của một môi trường có giá trị bằng tỉ số tốc độ ánh sáng c trong chân không với?", a: "Tốc độ ánh sáng v trong môi trường đó", b: "Tần số ánh sáng", c: "Bước sóng ánh sáng", d: "Góc tới i", cIdx: 0 },
-        { q: "Khi ánh sáng truyền từ không khí vào nước, tia khúc xạ sẽ?", a: "Lệch xa pháp tuyến hơn tia tới", b: "Lệch gần pháp tuyến hơn tia tới", c: "Truyền thẳng", d: "Bị phản xạ toàn phần", cIdx: 1 },
-        { q: "Biểu thức n = sini / sinr. Nếu i = 30 độ, n = 1.5, giá trị sinr là?", a: "0.75", b: "0.33", c: "0.5", d: "1.0", cIdx: 1 },
-
-        // Phản xạ toàn phần
-        { q: "Điều kiện xảy ra phản xạ toàn phần là ánh sáng truyền từ môi trường chiết quang hơn sang môi trường kém chiết quang hơn và?", a: "Góc tới nhỏ hơn góc tới hạn", b: "Góc tới lớn hơn hoặc bằng góc tới hạn", c: "Góc tới bằng 0", d: "Góc tới bằng 90 độ", cIdx: 1 },
-        
-        // Màu sắc & Ozone
-        { q: "Tầng Ozone có tác dụng gì quan trọng nhất đối với Trái Đất?", a: "Giúp cây quang hợp", b: "Hấp thụ tia tử ngoại (UV) có hại từ Mặt Trời", c: "Giữ ấm Trái Đất", d: "Tạo ra ánh sáng màu", cIdx: 1 },
-        { q: "Màu sắc của một vật không tự phát sáng được nhìn thấy phụ thuộc vào?", a: "Chỉ ánh sáng chiếu vào", b: "Ánh sáng bị vật đó hấp thụ và phản xạ", c: "Kích thước của vật", d: "Khối lượng của vật", cIdx: 1 },
-        { q: "Sự tán sắc ánh sáng qua lăng kính được giải thích là do chiết suất của lăng kính đối với các ánh sáng màu khác nhau là?", a: "Như nhau", b: "Khác nhau", c: "Luôn bằng 1", d: "Bằng 0", cIdx: 1 },
-        
-        // Lăng kính & Quang phổ
-        { q: "Khi chiếu chùm sáng trắng qua lăng kính, tia bị lệch nhiều nhất về phía đáy lăng kính là?", a: "Tia đỏ", b: "Tia vàng", c: "Tia tím", d: "Tia lục", cIdx: 2 },
-        { q: "Quang phổ của ánh sáng trắng thu được sau lăng kính gồm?", a: "7 màu đơn lẻ cách biệt", b: "Một dải màu biến thiên liên tục từ đỏ đến tím", c: "Chỉ có màu trắng", d: "Chỉ có màu đen", cIdx: 1 },
-        { q: "Chiết suất của nước đối với ánh sáng đỏ so với ánh sáng tím là?", a: "Lớn hơn", b: "Nhỏ hơn", c: "Bằng nhau", d: "Gấp đôi", cIdx: 1 },
-        { q: "Hiện tượng nào sau đây giải thích sự tạo thành cầu vồng sau cơn mưa?", a: "Phản xạ ánh sáng", b: "Tán sắc ánh sáng", c: "Sự hấp thụ ánh sáng", d: "Hiện tượng quang điện", cIdx: 1 },
-        { q: "Trong biểu thức P = A/t, nếu thời gian t tăng lên 2 lần khi công A không đổi thì P sẽ?", a: "Tăng 2 lần", b: "Giảm 2 lần", c: "Không đổi", d: "Tăng 4 lần", cIdx: 1 }
+        { q: "Chiết suất n của một môi trường được tính bằng tỉ số giữa tốc độ ánh sáng trong chân không (c) và?", a: "Tốc độ ánh sáng trong môi trường đó (v)", b: "Bước sóng ánh sáng", c: "Góc tới i", d: "Góc khúc xạ r", cIdx: 0 },
+        { q: "Định luật khúc xạ ánh sáng phát biểu rằng tia khúc xạ nằm trong mặt phẳng tới và ở phía bên kia pháp tuyến so với?", a: "Tia phản xạ", b: "Tia tới", c: "Mặt phân cách", d: "Đáy lăng kính", cIdx: 1 },
+        { q: "Hiện tượng ánh sáng bị lệch khỏi phương truyền ban đầu khi đi qua mặt phân cách hai môi trường gọi là?", a: "Phản xạ", b: "Khúc xạ", c: "Tán sắc", d: "Hấp thụ", cIdx: 1 },
+        { q: "Công thức liên hệ giữa chiết suất và góc tới, góc khúc xạ là?", a: "n = sin r / sin i", b: "n = sin i / sin r", c: "n = i / r", d: "n = r / i", cIdx: 1 },
+        { q: "Tác dụng chính của tầng Ozone đối với sự sống trên Trái Đất là?", a: "Giữ nhiệt độ ổn định", b: "Hấp thụ tia tử ngoại (UV) có hại", c: "Cung cấp Oxy", d: "Tạo ra mây mưa", cIdx: 1 },
+        { q: "Ánh sáng màu là ánh sáng?", a: "Có một màu nhất định", b: "Luôn là ánh sáng trắng", c: "Không bị lăng kính tán sắc", d: "Có năng lượng bằng 0", cIdx: 0 },
+        { q: "Màu sắc của một vật ta nhìn thấy phụ thuộc vào màu sắc ánh sáng bị vật đó?", a: "Hấp thụ hoàn toàn", b: "Hấp thụ và phản xạ", c: "Xuyên qua hoàn toàn", d: "Tán sắc", cIdx: 1 },
+        { q: "Khi chiếu chùm sáng trắng qua lăng kính, hiện tượng dải màu từ đỏ đến tím hiện ra gọi là?", a: "Khúc xạ ánh sáng", b: "Tán sắc ánh sáng", c: "Phản xạ ánh sáng", d: "Giao thoa ánh sáng", cIdx: 1 },
+        { q: "Trong hiện tượng tán sắc qua lăng kính, tia sáng nào bị lệch ít nhất?", a: "Tia Tím", b: "Tia Đỏ", c: "Tia Vàng", d: "Tia Lục", cIdx: 1 },
+        { q: "Điều kiện xảy ra phản xạ toàn phần là n1 > n2 và góc tới i phải?", a: "Lớn hơn hoặc bằng góc tới hạn i_th", b: "Nhỏ hơn góc tới hạn i_th", c: "Bằng 0", d: "Bằng 90 độ", cIdx: 0 },
+        { q: "Để xác định góc tới hạn i_th, ta dùng công thức nào?", a: "sin i_th = n2 / n1", b: "sin i_th = n1 / n2", c: "i_th = n1 + n2", d: "sin i_th = 1 / n1", cIdx: 0 },
+        { q: "Khi truyền từ nước ra không khí, tia sáng có thể bị phản xạ toàn phần vì?", a: "Nước chiết quang hơn không khí", b: "Không khí chiết quang hơn nước", c: "Tốc độ ánh sáng trong nước lớn hơn", d: "Góc tới luôn bằng 0", cIdx: 0 },
+        { q: "Thiết bị nào sau đây dùng để tạo ra quang phổ của ánh sáng trắng?", a: "Gương cầu lõm", b: "Lăng kính", c: "Thấu kính phân kì", d: "Mặt phẳng nghiêng", cIdx: 1 }
     ];
 
     const scores = ["1.0", "2.0", "3.0", "4.0", "5.0", "6.0", "7.0", "8.0", "8.5", "9.0", "9.2", "9.4", "9.6", "9.8", "10"];
@@ -263,25 +254,29 @@
 
     function updateVolume(val) {
         volume = val;
-        [bgAudio, sndCorrect, sndWrong, sndClick].forEach(a => a.volume = val);
+        [bgAudio, sndCorrect, sndWrong, sndClick].forEach(a => { if(a) a.volume = val; });
     }
 
     function startGame() {
         const name = document.getElementById('name-input').value;
         const sbd = document.getElementById('sbd-input').value;
-        if (!name || !sbd) { alert("Nhập đủ tên và SBD đi mày ơi!"); return; }
+        if (!name || !sbd) { alert("Nhập đủ thông tin đi mày!"); return; }
         
-        sndClick.play();
+        // Kích hoạt âm thanh (Tránh bị trình duyệt block)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        sndClick.play().catch(e => console.log("Audio play failed"));
         document.getElementById('display-name').innerText = name.toUpperCase();
         document.getElementById('display-sbd').innerText = sbd;
         
         setTimeout(() => {
             document.getElementById('intro-screen').classList.add('hidden');
-            gameQuestions = [...rawQuestions].sort(() => Math.random() - 0.5).slice(0, 15);
+            gameQuestions = [...rawQuestions].sort(() => Math.random() - 0.5);
             renderScoreBoard();
             loadQuestion();
-            bgAudio.play();
-        }, 1000);
+            bgAudio.play().catch(e => console.log("BG Audio failed"));
+        }, 800);
     }
 
     function renderScoreBoard() {
@@ -322,24 +317,24 @@
         const el = document.getElementById(`opt-${i}`);
         el.classList.add('selected');
         
-        sndClick.play();
+        sndClick.play().catch(() => {});
         bgAudio.pause();
 
         setTimeout(() => {
             if (i === correctIdx) {
                 el.classList.replace('selected', 'correct');
-                sndCorrect.play();
+                sndCorrect.play().catch(() => {});
                 setTimeout(() => {
                     currentIdx++;
                     if (currentIdx < 15) {
                         loadQuestion();
-                        bgAudio.play();
+                        bgAudio.play().catch(() => {});
                     } else showResult(true);
                 }, 2000);
             } else {
                 el.classList.replace('selected', 'wrong');
                 document.getElementById(`opt-${correctIdx}`).classList.add('correct');
-                sndWrong.play();
+                sndWrong.play().catch(() => {});
                 setTimeout(() => showResult(false), 2000);
             }
         }, 1200);
@@ -349,7 +344,7 @@
         bgAudio.pause();
         document.getElementById('result-screen').classList.remove('hidden');
         let finalScore = win ? "10" : (currentIdx > 0 ? scores[currentIdx - 1] : "0");
-        document.getElementById('result-text').innerText = win ? "XUẤT SẮC! MÀY ĐÃ PHÁ ĐẢO KHTN 9!" : `CỐ GẮNG LẦN SAU NHÉ!\nĐIỂM SỐ: ${finalScore}`;
+        document.getElementById('result-text').innerText = win ? "QUÁ ĐỈNH! MÀY LÀ TRIỆU PHÚ KHTN 9!" : `GAME OVER!\nĐIỂM CỦA MÀY: ${finalScore}`;
     }
 
     // Trợ giúp
@@ -358,7 +353,7 @@
         const btn = document.getElementById('help-5050');
         if (btn.classList.contains('used')) return;
         btn.classList.add('used');
-        sndClick.play();
+        sndClick.play().catch(() => {});
         const correctIdx = gameQuestions[currentIdx].cIdx;
         let indices = [0, 1, 2, 3].filter(idx => idx !== correctIdx).sort(() => Math.random() - 0.5);
         document.getElementById(`opt-${indices[0]}`).classList.add('invisible');
@@ -370,12 +365,12 @@
         const btn = document.getElementById('help-audience');
         if (btn.classList.contains('used')) return;
         btn.classList.add('used');
-        sndClick.play();
+        sndClick.play().catch(() => {});
         document.getElementById('poll-modal').style.display = 'block';
         const bars = document.getElementById('poll-bars');
         bars.innerHTML = '';
         const cIdx = gameQuestions[currentIdx].cIdx;
-        let p = [10,10,10,10]; p[cIdx] = 60 + Math.floor(Math.random()*20);
+        let p = [10,10,10,10]; p[cIdx] = 75;
         ['A','B','C','D'].forEach((l,i) => {
             const w = document.createElement('div');
             w.style.width='15%'; w.style.textAlign='center';
@@ -389,10 +384,10 @@
         const btn = document.getElementById('help-phone');
         if (btn.classList.contains('used')) return;
         btn.classList.add('used');
-        sndClick.play();
+        sndClick.play().catch(() => {});
         document.getElementById('phone-modal').style.display = 'block';
         const labels = ['A','B','C','D'];
-        document.getElementById('phone-text').innerText = `"Alo! Tớ vừa tra sách KHTN 9 xong, đáp án đúng chắc chắn là ${labels[gameQuestions[currentIdx].cIdx]}!"`;
+        document.getElementById('phone-text').innerText = `"Tao vừa xem lại bài Khúc xạ ánh sáng, đáp án là ${labels[gameQuestions[currentIdx].cIdx]} chắc luôn!"`;
     }
 
     function closePoll() { document.getElementById('poll-modal').style.display='none'; }

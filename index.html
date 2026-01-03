@@ -16,7 +16,7 @@
             height: 100vh;
         }
 
-        /* Logic hiển thị đáp án */
+        /* Đáp án */
         .ans-btn {
             background: linear-gradient(to right, #1e293b, #334155);
             border: 2px solid #3b82f6;
@@ -41,8 +41,8 @@
         .ans-btn.wrong { background: #dc2626 !important; color: white; border-color: white; }
 
         .ans-hidden {
-            display: none !important;
-            pointer-events: none !important;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .money-item { font-size: 0.85rem; padding: 2px; }
@@ -73,6 +73,7 @@
 </head>
 <body class="bg-slate-950">
 
+    <!-- Dùng lại bộ link cũ theo yêu cầu của mày -->
     <audio id="s-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
     <audio id="s-correct" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
     <audio id="s-wrong" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3"></audio>
@@ -82,7 +83,18 @@
         <p class="text-sm mt-2 opacity-70">Bấm để đóng</p>
     </div>
 
-    <!-- Màn hình kết thúc xịn xò -->
+    <!-- Màn hình chào -->
+    <div id="intro" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-5xl font-black text-yellow-500 mb-2">VẬT LÝ 9</h1>
+        <p class="text-blue-400 mb-10 tracking-widest uppercase font-bold">Ai là triệu phú - Bản chuẩn GDPT</p>
+        <div class="w-full max-w-md space-y-4">
+            <input type="text" id="name-in" placeholder="Họ và tên thí sinh" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500">
+            <input type="text" id="sbd-in" placeholder="Số báo danh (SBD)" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500">
+            <button onclick="initGame()" class="w-full p-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xl transition-all active:scale-95 shadow-lg">VÀO PHÒNG THI</button>
+        </div>
+    </div>
+
+    <!-- Màn hình kết thúc -->
     <div id="end-screen">
         <div class="bg-slate-900 border-4 border-yellow-500 rounded-[40px] p-10 max-w-lg w-full shadow-[0_0_100px_rgba(234,179,8,0.3)]">
             <h2 id="end-title" class="text-4xl font-black text-yellow-500 mb-4 uppercase">KẾT THÚC</h2>
@@ -93,17 +105,6 @@
                 <p class="text-2xl">ĐIỂM SỐ: <span id="end-score" class="text-5xl font-black text-green-500 block mt-2">0.0</span></p>
             </div>
             <button onclick="location.reload()" class="w-full p-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl rounded-2xl transition-all shadow-lg active:scale-95">CHƠI LẠI</button>
-        </div>
-    </div>
-
-    <!-- Màn hình chào -->
-    <div id="intro" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-5xl font-black text-yellow-500 mb-2 text-shadow-lg">VẬT LÝ 9</h1>
-        <p class="text-blue-400 mb-10 tracking-widest uppercase font-bold">Ai là triệu phú - Bản chuẩn GDPT</p>
-        <div class="w-full max-w-md space-y-4">
-            <input type="text" id="name-in" placeholder="Họ và tên thí sinh" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500 transition-all">
-            <input type="text" id="sbd-in" placeholder="Số báo danh (SBD)" class="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 outline-none focus:border-blue-500 transition-all">
-            <button onclick="initGame()" class="w-full p-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xl transition-all active:scale-95 shadow-lg">VÀO PHÒNG THI</button>
         </div>
     </div>
 
@@ -136,7 +137,7 @@
             </div>
 
             <div id="score-board" class="flex-1 bg-slate-900/90 rounded-2xl p-4 flex flex-col-reverse border border-slate-800 shadow-inner">
-                <!-- Score rendered by JS -->
+                <!-- Score board -->
             </div>
         </div>
     </div>
@@ -164,10 +165,10 @@
         let currentIdx = 0;
         let gamePool = [];
         let canClick = true;
-        let playerName = "";
-        let playerSbd = "";
+        let pName = "";
+        let pSbd = "";
 
-        function play(id) {
+        function playSound(id) {
             const s = document.getElementById('s-'+id);
             if(s) { s.currentTime = 0; s.play().catch(()=>{}); }
         }
@@ -180,12 +181,12 @@
         }
 
         function initGame() {
-            playerName = document.getElementById('name-in').value;
-            playerSbd = document.getElementById('sbd-in').value;
-            if(!playerName || !playerSbd) return alert("Nhập đủ Tên và SBD mới được thi nha mày!");
+            pName = document.getElementById('name-in').value;
+            pSbd = document.getElementById('sbd-in').value;
+            if(!pName || !pSbd) return alert("Nhập đủ Tên và SBD đi nha!");
             
-            document.getElementById('p-name').innerText = playerName;
-            document.getElementById('p-sbd').innerText = "SBD: " + playerSbd;
+            document.getElementById('p-name').innerText = pName;
+            document.getElementById('p-sbd').innerText = "SBD: " + pSbd;
             document.getElementById('intro').style.display = 'none';
             
             const l1 = QUESTIONS.filter(q => q.lv === 1).sort(() => Math.random()-0.5).slice(0,5);
@@ -230,48 +231,49 @@
             
             const btn = document.getElementById(`ans-${idx}`);
             btn.classList.add('selected');
-            play('click');
+            playSound('click');
 
             setTimeout(() => {
                 if(btn.dataset.correct === "true") {
                     btn.classList.add('correct');
-                    play('correct');
+                    playSound('correct');
                     setTimeout(() => {
                         if(currentIdx < 14) {
                             currentIdx++;
                             renderScoreBoard();
                             loadQuestion();
                         } else {
-                            showEndScreen(true);
+                            endGame(true);
                         }
                     }, 1500);
                 } else {
                     btn.classList.add('wrong');
-                    play('wrong');
+                    playSound('wrong');
                     for(let i=0; i<4; i++) {
                         const b = document.getElementById(`ans-${i}`);
                         if(b.dataset.correct === "true") b.classList.add('correct');
                     }
-                    setTimeout(() => showEndScreen(false), 2000);
+                    setTimeout(() => endGame(false), 2000);
                 }
             }, 1000);
         }
 
         function use5050() {
             if(!canClick) return;
-            const btn50 = document.getElementById('help-50');
-            if(btn50.disabled) return;
-            btn50.disabled = true;
+            const btn = document.getElementById('help-50');
+            if(btn.disabled) return;
+            btn.disabled = true;
+            playSound('click');
 
-            let incorrectOnes = [];
+            let incorrects = [];
             for(let i=0; i<4; i++) {
                 const b = document.getElementById(`ans-${i}`);
-                if(b.dataset.correct === "false") incorrectOnes.push(b);
+                if(b.dataset.correct === "false") incorrects.push(b);
             }
-            incorrectOnes.sort(() => Math.random() - 0.5);
-            incorrectOnes[0].classList.add('ans-hidden');
-            incorrectOnes[1].classList.add('ans-hidden');
-            showMsg("Đã loại bỏ 2 phương án sai!");
+            incorrects.sort(() => Math.random() - 0.5);
+            incorrects[0].classList.add('ans-hidden');
+            incorrects[1].classList.add('ans-hidden');
+            showMsg("Trợ giúp 50:50 đã loại bỏ 2 phương án sai!");
         }
 
         function useCall() {
@@ -279,14 +281,15 @@
             const btn = document.getElementById('help-call');
             if(btn.disabled) return;
             btn.disabled = true;
+            playSound('click');
 
-            let correctLabel = "A";
+            let label = "A";
             for(let i=0; i<4; i++) {
                 if(document.getElementById(`ans-${i}`).dataset.correct === "true") {
-                    correctLabel = String.fromCharCode(65+i);
+                    label = String.fromCharCode(65+i);
                 }
             }
-            showMsg(`Người thân bảo: "Tao chắc chắn là ${correctLabel}!"`);
+            showMsg(`Người thân gợi ý: "Chọn ${label} đi, tao vừa tra Google xong!"`);
         }
 
         function useAud() {
@@ -294,40 +297,40 @@
             const btn = document.getElementById('help-aud');
             if(btn.disabled) return;
             btn.disabled = true;
+            playSound('click');
 
-            let correctLabel = "A";
+            let label = "A";
             for(let i=0; i<4; i++) {
                 if(document.getElementById(`ans-${i}`).dataset.correct === "true") {
-                    correctLabel = String.fromCharCode(65+i);
+                    label = String.fromCharCode(65+i);
                 }
             }
-            showMsg(`Khán giả: 80% chọn ${correctLabel}!`);
+            showMsg(`Khán giả: Đa số (75%) đang hướng về đáp án ${label}!`);
         }
 
-        function showEndScreen(isWin) {
-            const endScreen = document.getElementById('end-screen');
-            const endTitle = document.getElementById('end-title');
-            const endScore = document.getElementById('end-score');
+        function endGame(isWin) {
+            const screen = document.getElementById('end-screen');
+            const title = document.getElementById('end-title');
+            const scoreDisp = document.getElementById('end-score');
             
-            document.getElementById('end-name').innerText = playerName;
-            document.getElementById('end-sbd').innerText = playerSbd;
+            document.getElementById('end-name').innerText = pName;
+            document.getElementById('end-sbd').innerText = pSbd;
             
-            let finalScore = "0.0";
+            let score = "0.0";
             if(isWin) {
-                endTitle.innerText = "CHÚC MỪNG CHIẾN THẮNG!";
-                endTitle.className = "text-4xl font-black text-green-500 mb-4 uppercase";
-                finalScore = "10.0";
+                title.innerText = "TRIỆU PHÚ VẬT LÝ!";
+                title.style.color = "#22c55e";
+                score = "10.0";
             } else {
-                endTitle.innerText = "DỪNG CUỘC CHƠI";
-                endTitle.className = "text-4xl font-black text-red-500 mb-4 uppercase";
-                // Tính điểm mốc
-                if(currentIdx >= 10) finalScore = "8.0";
-                else if(currentIdx >= 5) finalScore = "5.0";
-                else finalScore = currentIdx > 0 ? SCORES[currentIdx-1] : "0.0";
+                title.innerText = "DỪNG CUỘC CHƠI";
+                title.style.color = "#ef4444";
+                if(currentIdx >= 10) score = "8.0";
+                else if(currentIdx >= 5) score = "5.0";
+                else score = currentIdx > 0 ? SCORES[currentIdx-1] : "0.0";
             }
             
-            endScore.innerText = finalScore;
-            endScreen.style.display = 'flex';
+            scoreDisp.innerText = score;
+            screen.style.display = 'flex';
         }
     </script>
 </body>
